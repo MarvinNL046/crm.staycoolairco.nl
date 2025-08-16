@@ -35,8 +35,8 @@ export default function LoginPage() {
       if (error) throw error
 
       console.log('Login successful, redirecting to dashboard...')
-      router.push('/dashboard')
-      router.refresh()
+      // Force a hard redirect for Next.js App Router
+      window.location.href = '/dashboard'
     } catch (error: any) {
       console.error('Login error:', error)
       setError(error.message || 'Er is een fout opgetreden bij het inloggen')

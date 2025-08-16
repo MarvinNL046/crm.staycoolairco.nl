@@ -82,8 +82,7 @@ export default function RegisterPage() {
       if (profileError) throw profileError
 
       // Redirect naar dashboard
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     } catch (error: any) {
       console.error('Registration error:', error)
       setError(error.message || 'Er is een fout opgetreden bij het registreren')
