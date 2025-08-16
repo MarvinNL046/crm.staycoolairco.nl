@@ -236,10 +236,20 @@ export default async function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="bg-white shadow rounded-lg p-6">
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Lead Pipeline</h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Sleep leads tussen kolommen om hun status te wijzigen
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Kanban Pipeline</h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Sleep leads tussen kolommen om hun status te wijzigen (drag & drop)
+                    </p>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <svg className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                    </svg>
+                    Drag & Drop Enabled
+                  </div>
+                </div>
               </div>
 
               <LeadPipeline 

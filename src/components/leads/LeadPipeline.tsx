@@ -41,6 +41,7 @@ const statusLabels: Record<LeadStatus, string> = {
 export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPipelineProps) {
   const [leads, setLeads] = useState(initialLeads)
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null)
+  const [draggedOverStatus, setDraggedOverStatus] = useState<LeadStatus | null>(null)
   const [showLeadForm, setShowLeadForm] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const supabase = createClient()
@@ -119,9 +120,14 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, status: LeadStatus) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    setDraggedOverStatus(status)
+  }
+
+  const handleDragLeave = () => {
+    setDraggedOverStatus(null)
   }
 
   const handleDrop = async (e: React.DragEvent, newStatus: LeadStatus) => {
@@ -168,6 +174,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     }
 
     setDraggedLead(null)
+    setDraggedOverStatus(null)
   }
 
   const refreshLeads = async () => {
@@ -206,10 +213,13 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
           <div
             key={stage.id}
             className="flex-shrink-0 w-80"
-            onDragOver={handleDragOver}
+            onDragOver={(e) => handleDragOver(e, status)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}
           >
-            <div className="bg-gray-100 rounded-lg p-4">
+            <div className={`bg-gray-100 rounded-lg p-4 transition-all duration-200 ${
+              draggedOverStatus === status ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+            }`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">
                   {statusLabels[status]}
@@ -220,13 +230,20 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
               </div>
               
               <div className="space-y-3 min-h-[200px]">
+                {stageLeads.length === 0 && (
+                  <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-sm text-gray-500">Sleep leads hierheen</p>
+                  </div>
+                )}
                 {stageLeads.map((lead) => (
                   <div
                     key={lead.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead)}
                     onClick={() => handleLeadClick(lead)}
-                    className="bg-white rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                    className={`bg-white rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-all duration-200 ${
+                      draggedLead?.id === lead.id ? 'opacity-50' : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-gray-900">{lead.name}</h4>
