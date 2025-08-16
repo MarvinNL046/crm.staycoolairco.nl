@@ -21,6 +21,7 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
     company: '',
     source: 'manual',
     notes: '',
+    value: 0,
   })
   const [tags, setTags] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -43,6 +44,7 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
         company: formData.company || null,
         source: formData.source || 'manual',
         notes: formData.notes || null,
+        value: formData.value || 0,
         tenant_id: tenantId,
         created_by: user?.id || null,
         status: 'new',
@@ -162,6 +164,26 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               <option value="social">Social Media</option>
               <option value="adwords">Google Ads</option>
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="value" className="block text-sm font-medium text-gray-700 mb-1">
+              Geschatte waarde
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+              <input
+                type="number"
+                id="value"
+                name="value"
+                step="0.01"
+                min="0"
+                value={formData.value || ''}
+                onChange={handleChange}
+                placeholder="0.00"
+                className="w-full rounded-md border border-gray-300 pl-8 pr-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           <div>

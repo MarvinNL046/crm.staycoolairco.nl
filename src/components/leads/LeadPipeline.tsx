@@ -269,7 +269,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                 </span>
               </div>
               
-              <div className="space-y-3 min-h-[400px]">
+              <div className="space-y-3 min-h-[500px]">
                 {stageLeads.length === 0 && (
                   <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg">
                     <p className="text-sm text-gray-500">Sleep leads hierheen</p>
@@ -281,51 +281,139 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead)}
                     onClick={() => handleLeadClick(lead)}
-                    className={`bg-white rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-all duration-200 ${
+                    className={`bg-white rounded-lg p-3 shadow-sm cursor-move hover:shadow-md transition-all duration-200 ${
                       draggedLead?.id === lead.id ? 'opacity-50' : ''
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{lead.name}</h4>
-                      <span className={`text-xs px-2 py-1 rounded-full ${statusColors[lead.status]}`}>
-                        {statusLabels[lead.status]}
-                      </span>
-                    </div>
-                    
-                    {lead.company && (
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Building2 className="h-4 w-4 mr-1" />
-                        {lead.company}
+                    {/* Header with name and avatar */}
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 text-sm truncate hover:underline">
+                          {lead.name}
+                          {lead.created_at && (
+                            <span className="text-gray-500 font-normal">
+                              {' | '}
+                              {new Date(lead.created_at).toLocaleDateString('nl-NL', {
+                                day: 'numeric',
+                                month: 'long'
+                              })}
+                            </span>
+                          )}
+                        </h4>
                       </div>
-                    )}
-                    
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                      {lead.email && (
-                        <div className="flex items-center">
-                          <Mail className="h-4 w-4 mr-1" />
-                          <span className="truncate">{lead.email}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center border border-gray-300">
+                          <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
                         </div>
-                      )}
-                      {lead.phone && (
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-1" />
-                          {lead.phone}
-                        </div>
-                      )}
+                      </div>
                     </div>
                     
-                    {lead.tags && lead.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {lead.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded"
-                          >
-                            {tag}
+                    {/* Lead details table */}
+                    <div className="space-y-1 mb-2">
+                      {lead.source && (
+                        <div className="flex text-xs">
+                          <span className="font-semibold text-gray-600 mr-2">Lead bron:</span>
+                          <span className="text-gray-800">{lead.source}</span>
+                        </div>
+                      )}
+                      
+                      {lead.value && (
+                        <div className="flex text-xs">
+                          <span className="font-semibold text-gray-600 mr-2">Waarde:</span>
+                          <span className="text-gray-800">
+                            €{lead.value.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                      
+                      {lead.company && (
+                        <div className="flex text-xs">
+                          <span className="font-semibold text-gray-600 mr-2">Bedrijf:</span>
+                          <span className="text-gray-800 truncate">{lead.company}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Action icons */}
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-100">
+                      {/* Phone */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (lead.phone) window.open(`tel:${lead.phone}`)
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Bellen"
+                      >
+                        <Phone className="h-4 w-4 text-gray-500" />
+                      </button>
+                      
+                      {/* Messages */}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Berichten"
+                      >
+                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Tags */}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Tags"
+                      >
+                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Notes */}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Notities"
+                      >
+                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Tasks */}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Taken"
+                      >
+                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                      </button>
+                      
+                      {/* Calendar */}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Afspraken"
+                      >
+                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Tags display */}
+                      {lead.tags && lead.tags.length > 0 && (
+                        <div className="flex-1 flex justify-end">
+                          <span className="text-xs text-gray-500">
+                            {lead.tags.length} tag{lead.tags.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
