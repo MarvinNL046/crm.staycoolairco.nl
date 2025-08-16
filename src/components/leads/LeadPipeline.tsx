@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, Phone, Mail, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import LeadForm from './LeadForm'
+import LeadDetailModal from './LeadDetailModal'
 import type { Database } from '@/types/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -38,6 +39,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
   const [leads, setLeads] = useState(initialLeads)
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null)
   const [showLeadForm, setShowLeadForm] = useState(false)
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const supabase = createClient()
 
   const getLeadsByStatus = (status: LeadStatus) => {
@@ -98,6 +100,19 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     }
   }
 
+  const handleLeadClick = (lead: Lead) => {
+    setSelectedLead(lead)
+  }
+
+  const handleLeadUpdate = () => {
+    refreshLeads()
+    setSelectedLead(null)
+  }
+
+  const handleLeadDelete = () => {
+    refreshLeads()
+  }
+
   return (
     <>
       <div className="flex gap-6 overflow-x-auto pb-4">
@@ -128,7 +143,8 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                     key={lead.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead)}
-                    className="bg-white rounded-lg p-4 shadow-sm cursor-move hover:shadow-md transition-shadow"
+                    onClick={() => handleLeadClick(lead)}
+                    className="bg-white rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-gray-900">{lead.name}</h4>
@@ -195,6 +211,15 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
         tenantId={tenantId}
         onClose={() => setShowLeadForm(false)}
         onSuccess={refreshLeads}
+      />
+    )}
+
+    {selectedLead && (
+      <LeadDetailModal
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
+        onUpdate={handleLeadUpdate}
+        onDelete={handleLeadDelete}
       />
     )}
     </>

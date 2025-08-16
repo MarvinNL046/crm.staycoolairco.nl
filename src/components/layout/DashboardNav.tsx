@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { Menu, X, ChevronDown, Users, MessageSquare, Zap, Settings, LogOut } from 'lucide-react'
+import { Menu, X, ChevronDown, Users, MessageSquare, Zap, Settings, LogOut, BarChart3, Search } from 'lucide-react'
 
 interface DashboardNavProps {
   user: User
@@ -23,7 +23,8 @@ export default function DashboardNav({ user, tenants }: DashboardNavProps) {
   const currentTenant = tenants[0]?.tenants
 
   const navigation = [
-    { name: 'Leads', href: '/dashboard', icon: Users },
+    { name: 'Pipeline', href: '/dashboard', icon: BarChart3 },
+    { name: 'Leads', href: '/dashboard/leads', icon: Search },
     { name: 'Berichten', href: '/dashboard/messages', icon: MessageSquare },
     { name: 'Automatisering', href: '/dashboard/automations', icon: Zap },
     { name: 'Instellingen', href: '/dashboard/settings', icon: Settings },

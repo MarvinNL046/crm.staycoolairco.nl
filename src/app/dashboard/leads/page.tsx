@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import WebhookSettings from '@/components/settings/WebhookSettings'
+import LeadListView from '@/components/leads/LeadListView'
 
-export default async function SettingsPage() {
+export default async function LeadsPage() {
   const supabase = await createClient()
   
   // Get current user
@@ -21,18 +21,15 @@ export default async function SettingsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Instellingen</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Configureer je CRM instellingen en integraties
+            Beheer al je leads in één overzicht
           </p>
         </div>
 
-        <div className="space-y-8">
-          <WebhookSettings 
-            tenantId={userTenants.tenant_id}
-            tenantName={(userTenants.tenants as any)?.name || ''}
-          />
-        </div>
+        <LeadListView 
+          tenantId={userTenants.tenant_id}
+        />
       </div>
     </div>
   )

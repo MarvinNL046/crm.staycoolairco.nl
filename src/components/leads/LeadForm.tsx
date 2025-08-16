@@ -37,7 +37,12 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
       const { data: { user } } = await supabase.auth.getUser()
       
       const leadData: Lead = {
-        ...formData,
+        name: formData.name || '',
+        email: formData.email || null,
+        phone: formData.phone || null,
+        company: formData.company || null,
+        source: formData.source || 'manual',
+        notes: formData.notes || null,
         tenant_id: tenantId,
         created_by: user?.id || null,
         status: 'new',

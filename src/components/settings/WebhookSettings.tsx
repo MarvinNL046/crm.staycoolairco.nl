@@ -52,7 +52,7 @@ export default function WebhookSettings({ tenantId, tenantName }: WebhookSetting
     } catch (error) {
       setTestResult({ 
         success: false, 
-        data: { error: 'Network error', message: error.message },
+        data: { error: 'Network error', message: (error as Error).message },
         status: 0
       })
     } finally {
