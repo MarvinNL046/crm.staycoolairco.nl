@@ -44,6 +44,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
   const [draggedOverStatus, setDraggedOverStatus] = useState<LeadStatus | null>(null)
   const [showLeadForm, setShowLeadForm] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'scroll'>('grid')
   const supabase = createClient()
   const { showToast } = useToast()
 
@@ -204,7 +205,46 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
 
   return (
     <>
-      <div className="flex gap-6 overflow-x-auto pb-4">
+      {/* View Mode Toggle */}
+      <div className="flex justify-end mb-4">
+        <div className="inline-flex rounded-md shadow-sm" role="group">
+          <button
+            type="button"
+            onClick={() => setViewMode('grid')}
+            title="Grid weergave (schaalt mee met scherm)"
+            className={`px-4 py-2 text-sm font-medium rounded-l-lg border flex items-center gap-2 ${
+              viewMode === 'grid'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span className="hidden sm:inline">Grid</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('scroll')}
+            title="Horizontale scroll (klassieke Kanban)"
+            className={`px-4 py-2 text-sm font-medium rounded-r-lg border flex items-center gap-2 ${
+              viewMode === 'scroll'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+            </svg>
+            <span className="hidden sm:inline">Scroll</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={viewMode === 'grid' 
+        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4"
+        : "flex gap-6 overflow-x-auto pb-4"
+      }>
       {stages.map((stage) => {
         const status = stage.key as LeadStatus
         const stageLeads = getLeadsByStatus(status)
@@ -212,7 +252,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
         return (
           <div
             key={stage.id}
-            className="flex-shrink-0 w-80"
+            className={viewMode === 'grid' ? "min-w-0" : "flex-shrink-0 w-80"}
             onDragOver={(e) => handleDragOver(e, status)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}
@@ -229,7 +269,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                 </span>
               </div>
               
-              <div className="space-y-3 min-h-[200px]">
+              <div className="space-y-3 min-h-[400px]">
                 {stageLeads.length === 0 && (
                   <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg">
                     <p className="text-sm text-gray-500">Sleep leads hierheen</p>
