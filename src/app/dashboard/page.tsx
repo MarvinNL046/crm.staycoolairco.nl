@@ -65,6 +65,7 @@ export default async function DashboardPage() {
     .eq('tenant_id', userTenants.tenant_id)
     .order('created_at', { ascending: false })
 
+
   // Get tenant info
   const { data: tenant } = await supabase
     .from('tenants')

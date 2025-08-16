@@ -56,7 +56,7 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
       name: 'Dashboard',
       items: [
         { name: 'Overzicht', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Pipeline', href: '/dashboard/pipeline', icon: BarChart3 },
+        { name: 'Kanban Pipeline', href: '/dashboard/pipeline', icon: BarChart3 },
         { name: 'Analytics', href: '/dashboard/analytics', icon: Target },
       ]
     },
