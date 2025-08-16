@@ -105,6 +105,10 @@ export default function RegisterPage() {
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           Nieuwe organisatie aanmaken
         </h2>
+        {/* Debug info - remove after testing */}
+        <div className="mt-2 text-xs text-gray-500 text-center">
+          Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configured' : 'Missing'}
+        </div>
         <p className="mt-2 text-center text-sm text-gray-600">
           Of{' '}
           <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
