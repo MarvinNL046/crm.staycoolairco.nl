@@ -28,7 +28,7 @@ export default function RealtimeStatus({ tenantId }: RealtimeStatusProps) {
           // This will trigger when any change happens, confirming connection is active
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
           setConnectionTime(new Date())

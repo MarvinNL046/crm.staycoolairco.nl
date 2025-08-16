@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         .eq('tenant_id', userTenants.tenant_id)
         .not('email', 'is', null)
       
-      existingLeads?.forEach(lead => {
+      existingLeads?.forEach((lead: any) => {
         if (lead.email) existingEmails.add(lead.email.toLowerCase())
       })
     }

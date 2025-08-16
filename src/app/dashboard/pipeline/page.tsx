@@ -24,7 +24,7 @@ export default async function PipelinePage() {
     .order('sort_order')
   
   // Map database stages to the format LeadPipeline expects
-  const stages = dbStages?.map(stage => ({
+  const stages = dbStages?.map((stage: any) => ({
     id: stage.id,
     key: stage.key,
     sort_order: stage.sort_order

@@ -59,7 +59,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
           table: 'leads',
           filter: `tenant_id=eq.${tenantId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Realtime change:', payload)
           handleRealtimeChange(payload)
         }
@@ -144,7 +144,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     setLeads(prevLeads => 
       prevLeads.map(lead => 
         lead.id === draggedLead.id 
-          ? { ...lead, status: newStatus }
+          ? { ...lead, status: newStatus as any }
           : lead
       )
     )

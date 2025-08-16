@@ -53,7 +53,7 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
           table: 'leads',
           filter: `tenant_id=eq.${tenantId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Realtime change in search:', payload)
           handleRealtimeChange(payload)
         }

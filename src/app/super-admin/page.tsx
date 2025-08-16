@@ -61,7 +61,7 @@ export default function SuperAdminDashboard() {
       }
 
       // Process tenant data with counts
-      const processedTenants: TenantWithStats[] = (tenantsData || []).map(tenant => ({
+      const processedTenants: TenantWithStats[] = (tenantsData || []).map((tenant: any) => ({
         ...tenant,
         user_count: tenant.tenant_users?.[0]?.count || 0,
         lead_count: tenant.leads?.[0]?.count || 0

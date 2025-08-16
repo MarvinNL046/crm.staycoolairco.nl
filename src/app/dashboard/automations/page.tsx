@@ -25,20 +25,20 @@ export default async function AutomationsPage() {
     .eq('tenant_id', userTenants.tenant_id)
     .order('created_at', { ascending: false })
 
-  const triggerTypeLabels = {
+  const triggerTypeLabels: Record<string, string> = {
     'lead_created': 'Nieuwe Lead',
     'status_change': 'Status Wijziging',
     'tag_added': 'Tag Toegevoegd',
     'schedule': 'Tijdschema'
   }
 
-  const actionChannelIcons = {
+  const actionChannelIcons: Record<string, any> = {
     'email': Mail,
     'sms': MessageSquare,
     'whatsapp': Smartphone
   }
 
-  const actionChannelLabels = {
+  const actionChannelLabels: Record<string, string> = {
     'email': 'E-mail',
     'sms': 'SMS',
     'whatsapp': 'WhatsApp'
@@ -103,7 +103,7 @@ export default async function AutomationsPage() {
                       Actief
                     </dt>
                     <dd className="text-lg font-semibold text-gray-900">
-                      {automations?.filter(a => a.is_active).length || 0}
+                      {automations?.filter((a: any) => a.is_active).length || 0}
                     </dd>
                   </dl>
                 </div>
@@ -123,7 +123,7 @@ export default async function AutomationsPage() {
                       Gepauzeerd
                     </dt>
                     <dd className="text-lg font-semibold text-gray-900">
-                      {automations?.filter(a => !a.is_active).length || 0}
+                      {automations?.filter((a: any) => !a.is_active).length || 0}
                     </dd>
                   </dl>
                 </div>
@@ -137,7 +137,7 @@ export default async function AutomationsPage() {
           <div className="px-4 py-5 sm:p-6">
             {automations && automations.length > 0 ? (
               <div className="space-y-4">
-                {automations.map((automation) => {
+                {automations.map((automation: any) => {
                   const ActionIcon = actionChannelIcons[automation.action_channel] || Mail
                   return (
                     <div key={automation.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
