@@ -10,7 +10,7 @@ import type { Database } from '@/types/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
 type Stage = Database['public']['Tables']['pipeline_stages']['Row']
-type LeadStatus = Database['public']['Enums']['lead_status']
+type LeadStatus = Database['public']['Enums']['lead_status'] | 'converted'
 
 interface LeadPipelineProps {
   stages: Stage[]
@@ -25,6 +25,7 @@ const statusColors: Record<LeadStatus, string> = {
   proposal: 'bg-yellow-100 text-yellow-800',
   won: 'bg-green-100 text-green-800',
   lost: 'bg-red-100 text-red-800',
+  converted: 'bg-green-100 text-green-800',
 }
 
 const statusLabels: Record<LeadStatus, string> = {
@@ -34,6 +35,7 @@ const statusLabels: Record<LeadStatus, string> = {
   proposal: 'Offerte',
   won: 'Gewonnen',
   lost: 'Verloren',
+  converted: 'Geconverteerd',
 }
 
 export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPipelineProps) {

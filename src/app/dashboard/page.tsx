@@ -2,6 +2,33 @@ import { createClient } from '@/lib/supabase/server'
 import LeadPipeline from '@/components/leads/LeadPipeline'
 import RealtimeStatus from '@/components/ui/RealtimeStatus'
 
+// Helper functions to map database stages
+function getStageDisplayName(key: string): string {
+  const names: Record<string, string> = {
+    'new': 'Nieuw',
+    'contacted': 'Gecontacteerd',
+    'qualified': 'Gekwalificeerd',
+    'proposal': 'Offerte',
+    'won': 'Gewonnen',
+    'lost': 'Verloren',
+    'converted': 'Geconverteerd'
+  }
+  return names[key] || key
+}
+
+function getStageColor(key: string): string {
+  const colors: Record<string, string> = {
+    'new': 'bg-blue-500',
+    'contacted': 'bg-yellow-500',
+    'qualified': 'bg-purple-500',
+    'proposal': 'bg-indigo-500',
+    'won': 'bg-green-500',
+    'lost': 'bg-red-500',
+    'converted': 'bg-green-500'
+  }
+  return colors[key] || 'bg-gray-500'
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   
@@ -18,12 +45,18 @@ export default async function DashboardPage() {
 
   if (!userTenants) return null
 
-  // Get pipeline stages - commented out for now as table doesn't exist
-  // const { data: stages } = await supabase
-  //   .from('pipeline_stages')
-  //   .select('*')
-  //   .order('sort_order')
-  const stages = null // We'll use defaultStages instead
+  // Get pipeline stages from database
+  const { data: dbStages } = await supabase
+    .from('pipeline_stages')
+    .select('*')
+    .order('sort_order')
+  
+  // Map database stages to the format LeadPipeline expects
+  const stages = dbStages?.map(stage => ({
+    id: stage.id,
+    key: stage.key,
+    sort_order: stage.sort_order
+  })) as any[]
 
   // Get leads for this tenant
   const { data: leads } = await supabase
@@ -57,13 +90,28 @@ export default async function DashboardPage() {
     .eq('tenant_id', userTenants.tenant_id)
     .eq('status', 'qualified')
 
+  const { count: wonLeads } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('tenant_id', userTenants.tenant_id)
+    .eq('status', 'won')
+
+  // Get recent leads for activity feed
+  const { data: recentLeads } = await supabase
+    .from('leads')
+    .select('*')
+    .eq('tenant_id', userTenants.tenant_id)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
   // Define default stages if none exist
   const defaultStages = [
-    { id: '1', name: 'Nieuw', status: 'new', color: 'bg-blue-500', sort_order: 1 },
-    { id: '2', name: 'Gecontacteerd', status: 'contacted', color: 'bg-yellow-500', sort_order: 2 },
-    { id: '3', name: 'Gekwalificeerd', status: 'qualified', color: 'bg-purple-500', sort_order: 3 },
-    { id: '4', name: 'Geconverteerd', status: 'converted', color: 'bg-green-500', sort_order: 4 },
-    { id: '5', name: 'Verloren', status: 'lost', color: 'bg-red-500', sort_order: 5 },
+    { id: 1, key: 'new', sort_order: 1 },
+    { id: 2, key: 'contacted', sort_order: 2 },
+    { id: 3, key: 'qualified', sort_order: 3 },
+    { id: 4, key: 'proposal', sort_order: 4 },
+    { id: 5, key: 'won', sort_order: 5 },
+    { id: 6, key: 'lost', sort_order: 6 }
   ]
 
   return (
@@ -159,24 +207,22 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Won Leads */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Quick Actions
+                      Gewonnen Deals
                     </dt>
-                    <dd>
-                      <a href="/dashboard/leads" className="text-sm font-semibold text-blue-600 hover:text-blue-500">
-                        Beheer Leads →
-                      </a>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {wonLeads || 0}
                     </dd>
                   </dl>
                 </div>
@@ -185,20 +231,101 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Pipeline Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Lead Pipeline</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Sleep leads tussen kolommen om hun status te wijzigen
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Pipeline - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Lead Pipeline</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Sleep leads tussen kolommen om hun status te wijzigen
+                </p>
+              </div>
+
+              <LeadPipeline 
+                stages={stages || defaultStages} 
+                initialLeads={leads || []} 
+                tenantId={userTenants.tenant_id}
+              />
+            </div>
           </div>
 
-          <LeadPipeline 
-            stages={stages || defaultStages} 
-            initialLeads={leads || []} 
-            tenantId={userTenants.tenant_id}
-          />
+          {/* Sidebar - Takes 1 column */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Snelle Acties</h3>
+              <div className="space-y-3">
+                <a
+                  href="/dashboard/leads"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">Beheer Leads</span>
+                  </div>
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+                <a
+                  href="/dashboard/automations"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-purple-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">Automatiseringen</span>
+                  </div>
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+                <a
+                  href="/dashboard/settings"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-gray-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">Instellingen</span>
+                  </div>
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recente Activiteit</h3>
+              <div className="space-y-4">
+                {recentLeads && recentLeads.length > 0 ? (
+                  recentLeads.map((lead) => (
+                    <div key={lead.id} className="flex items-start space-x-3">
+                      <div className={`flex-shrink-0 h-2 w-2 rounded-full mt-2 ${getStageColor(lead.status)}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {lead.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {getStageDisplayName(lead.status)} • {new Date(lead.created_at).toLocaleDateString('nl-NL')}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Nog geen leads toegevoegd</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
