@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { Menu, X, ChevronDown, Users, MessageSquare, Zap, Settings, LogOut, BarChart3, Search } from 'lucide-react'
+import { Menu, X, ChevronDown, Users, MessageSquare, Zap, Settings, LogOut, BarChart3, Search, Shield } from 'lucide-react'
+import { useSuperAdmin } from '@/hooks/useSuperAdmin'
 
 interface DashboardNavProps {
   user: User
@@ -18,6 +19,7 @@ export default function DashboardNav({ user, tenants }: DashboardNavProps) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const { isSuperAdmin } = useSuperAdmin()
 
   // Voor nu gebruiken we de eerste tenant
   const currentTenant = tenants[0]?.tenants
@@ -28,6 +30,7 @@ export default function DashboardNav({ user, tenants }: DashboardNavProps) {
     { name: 'Berichten', href: '/dashboard/messages', icon: MessageSquare },
     { name: 'Automatisering', href: '/dashboard/automations', icon: Zap },
     { name: 'Instellingen', href: '/dashboard/settings', icon: Settings },
+    ...(isSuperAdmin ? [{ name: '🚀 Super Admin', href: '/super-admin', icon: Shield }] : []),
   ]
 
   const handleSignOut = async () => {
