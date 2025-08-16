@@ -18,11 +18,12 @@ export default async function DashboardPage() {
 
   if (!userTenants) return null
 
-  // Get pipeline stages
-  const { data: stages } = await supabase
-    .from('pipeline_stages')
-    .select('*')
-    .order('sort_order')
+  // Get pipeline stages - commented out for now as table doesn't exist
+  // const { data: stages } = await supabase
+  //   .from('pipeline_stages')
+  //   .select('*')
+  //   .order('sort_order')
+  const stages = null // We'll use defaultStages instead
 
   // Get leads for this tenant
   const { data: leads } = await supabase
