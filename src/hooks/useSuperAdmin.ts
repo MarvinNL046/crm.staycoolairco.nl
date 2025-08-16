@@ -13,6 +13,13 @@ export function useSuperAdmin() {
 
   const checkSuperAdminStatus = async () => {
     try {
+      // Skip check if environment variables are missing (build time)
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        setIsSuperAdmin(false)
+        setLoading(false)
+        return
+      }
+
       const supabase = createClient()
       
       // Get current user
