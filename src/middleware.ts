@@ -1,22 +1,25 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Simple cookie-based auth check to avoid Supabase dependencies in middleware
-  const accessToken = request.cookies.get('sb-access-token')?.value
-  const refreshToken = request.cookies.get('sb-refresh-token')?.value
+  // Check for Supabase auth cookies with the correct pattern
+  // Supabase uses cookies like: sb-<project-ref>-auth-token
+  const cookies = request.cookies.getAll()
   
-  // Check if user has auth tokens
-  const hasValidTokens = accessToken && refreshToken
+  // Look for any Supabase auth cookies
+  const hasAuthCookie = cookies.some(cookie => 
+    cookie.name.includes('sb-') && 
+    (cookie.name.includes('-auth-token') || cookie.name.includes('-auth-token.0'))
+  )
 
   // protected routes
-  if (!hasValidTokens && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!hasAuthCookie && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 
   // redirect to dashboard if user is logged in and tries to access auth pages
-  if (hasValidTokens && request.nextUrl.pathname.startsWith('/auth')) {
+  if (hasAuthCookie && request.nextUrl.pathname.startsWith('/auth')) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
