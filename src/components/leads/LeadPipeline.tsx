@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, Phone, Mail, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import LeadForm from './LeadForm'
 import type { Database } from '@/types/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -36,6 +37,7 @@ const statusLabels: Record<LeadStatus, string> = {
 export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPipelineProps) {
   const [leads, setLeads] = useState(initialLeads)
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null)
+  const [showLeadForm, setShowLeadForm] = useState(false)
   const supabase = createClient()
 
   const getLeadsByStatus = (status: LeadStatus) => {
@@ -84,8 +86,21 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     setDraggedLead(null)
   }
 
+  const refreshLeads = async () => {
+    const { data } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false })
+    
+    if (data) {
+      setLeads(data)
+    }
+  }
+
   return (
-    <div className="flex gap-6 overflow-x-auto pb-4">
+    <>
+      <div className="flex gap-6 overflow-x-auto pb-4">
       {stages.map((stage) => {
         const status = stage.key as LeadStatus
         const stageLeads = getLeadsByStatus(status)
@@ -161,7 +176,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
               </div>
               
               {status === 'new' && (
-                <button className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-2 rounded-md hover:bg-gray-200 transition-colors">
+                <button 
+                  onClick={() => setShowLeadForm(true)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-2 rounded-md hover:bg-gray-200 transition-colors"
+                >
                   <Plus className="h-4 w-4" />
                   Nieuwe lead
                 </button>
@@ -171,5 +189,14 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
         )
       })}
     </div>
+    
+    {showLeadForm && (
+      <LeadForm
+        tenantId={tenantId}
+        onClose={() => setShowLeadForm(false)}
+        onSuccess={refreshLeads}
+      />
+    )}
+    </>
   )
 }
