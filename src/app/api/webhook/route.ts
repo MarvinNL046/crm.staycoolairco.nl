@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import type { Database } from '@/types/database.types'
 
+// Force Node.js runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // StayCool CRM Webhook handler
 export async function POST(request: NextRequest) {
   try {

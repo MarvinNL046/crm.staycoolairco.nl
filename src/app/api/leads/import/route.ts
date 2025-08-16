@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { parse } from 'csv-parse/sync'
 
+// Force Node.js runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 interface CSVRow {
   [key: string]: string
 }

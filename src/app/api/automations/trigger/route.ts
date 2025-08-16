@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processAutomationEvent, AutomationEvent } from '@/lib/automations'
 
+// Force Node.js runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // Trigger automation events
 export async function POST(request: NextRequest) {
   try {

@@ -10,6 +10,10 @@ import {
   formatPhoneNumber
 } from '@/lib/messagebird'
 
+// Force Node.js runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 interface MessageRequest {
   leadId: string
   tenantId: string

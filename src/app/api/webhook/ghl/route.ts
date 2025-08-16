@@ -2,6 +2,10 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/types/database.types'
 
+// Force Node.js runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // GoHighLevel webhook handler
 export async function POST(request: NextRequest) {
   try {

@@ -8,7 +8,15 @@ const nextConfig = {
     // Temporarily ignore TypeScript errors during builds
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['messagebird']
+  serverExternalPackages: ['messagebird', '@supabase/supabase-js', '@supabase/ssr'],
+  
+  // Disable Edge Runtime warnings
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('@supabase/supabase-js', '@supabase/ssr')
+    }
+    return config
+  }
 }
 
 module.exports = nextConfig
