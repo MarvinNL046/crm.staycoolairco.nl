@@ -242,8 +242,8 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
       </div>
 
       <div className={viewMode === 'grid' 
-        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4"
-        : "flex gap-6 overflow-x-auto pb-4"
+        ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
+        : "flex gap-6 overflow-x-auto pb-4 min-w-full"
       }>
       {stages.map((stage) => {
         const status = stage.key as LeadStatus
@@ -252,7 +252,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
         return (
           <div
             key={stage.id}
-            className={viewMode === 'grid' ? "min-w-0" : "flex-shrink-0 w-80"}
+            className={viewMode === 'grid' ? "min-w-0" : "flex-shrink-0 w-96"}
             onDragOver={(e) => handleDragOver(e, status)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}

@@ -104,6 +104,7 @@ export default async function PipelinePage() {
         </div>
       </div>
 
+      {/* Stats section with container */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -195,31 +196,35 @@ export default async function PipelinePage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Pipeline Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Kanban Board</h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Sleep leads tussen kolommen om hun status te wijzigen
-                </p>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <svg className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-                </svg>
-                Drag & Drop Enabled
+      {/* Pipeline Section - Full Width */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="bg-white shadow rounded-lg">
+          <div className="p-6">
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Kanban Board</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Sleep leads tussen kolommen om hun status te wijzigen
+                  </p>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <svg className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                  </svg>
+                  Drag & Drop Enabled
+                </div>
               </div>
             </div>
-          </div>
 
-          <LeadPipeline 
-            stages={stages || defaultStages} 
-            initialLeads={leads || []} 
-            tenantId={userTenants.tenant_id}
-          />
+            <LeadPipeline 
+              stages={stages || defaultStages} 
+              initialLeads={leads || []} 
+              tenantId={userTenants.tenant_id}
+            />
+          </div>
         </div>
       </div>
     </div>
