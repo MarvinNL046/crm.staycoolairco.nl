@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import WebhookSettings from '@/components/settings/WebhookSettings'
+import EmailSettings from '@/components/settings/EmailSettings'
+import MessagingSettings from '@/components/settings/MessagingSettings'
+import AutomationSettings from '@/components/settings/AutomationSettings'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -32,6 +35,18 @@ export default async function SettingsPage() {
             tenantId={userTenants.tenant_id}
             tenantName={(userTenants.tenants as any)?.name || ''}
           />
+          
+          <EmailSettings 
+            tenantId={userTenants.tenant_id}
+            tenantName={(userTenants.tenants as any)?.name || ''}
+          />
+
+          <MessagingSettings 
+            tenantId={userTenants.tenant_id}
+            tenantName={(userTenants.tenants as any)?.name || ''}
+          />
+
+          <AutomationSettings />
         </div>
       </div>
     </div>

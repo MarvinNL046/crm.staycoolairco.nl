@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Phone, Mail, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/ui/ToastProvider'
 import LeadForm from './LeadForm'
 import LeadDetailModal from './LeadDetailModal'
 import type { Database } from '@/types/database.types'
@@ -41,6 +42,71 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
   const [showLeadForm, setShowLeadForm] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const supabase = createClient()
+  const { showToast } = useToast()
+
+  // Setup realtime subscription for leads changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('leads-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads',
+          filter: `tenant_id=eq.${tenantId}`
+        },
+        (payload) => {
+          console.log('Realtime change:', payload)
+          handleRealtimeChange(payload)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [tenantId])
+
+  const handleRealtimeChange = (payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload
+
+    setLeads(currentLeads => {
+      switch (eventType) {
+        case 'INSERT':
+          // Add new lead if it doesn't already exist
+          if (!currentLeads.find(lead => lead.id === newRecord.id)) {
+            showToast('info', 'Nieuwe lead toegevoegd', `${newRecord.name} is toegevoegd aan de pipeline`, 3000)
+            return [...currentLeads, newRecord]
+          }
+          return currentLeads
+
+        case 'UPDATE':
+          // Update existing lead and show notification for status changes
+          const existingLead = currentLeads.find(lead => lead.id === newRecord.id)
+          if (existingLead && existingLead.status !== newRecord.status) {
+            const oldStatusLabel = statusLabels[existingLead.status as LeadStatus]
+            const newStatusLabel = statusLabels[newRecord.status as LeadStatus]
+            showToast('success', 'Lead status gewijzigd', `${newRecord.name}: ${oldStatusLabel} → ${newStatusLabel}`, 3000)
+          }
+          
+          return currentLeads.map(lead =>
+            lead.id === newRecord.id ? { ...lead, ...newRecord } : lead
+          )
+
+        case 'DELETE':
+          // Remove deleted lead
+          const deletedLead = currentLeads.find(lead => lead.id === oldRecord.id)
+          if (deletedLead) {
+            showToast('warning', 'Lead verwijderd', `${deletedLead.name} is verwijderd uit de pipeline`, 3000)
+          }
+          return currentLeads.filter(lead => lead.id !== oldRecord.id)
+
+        default:
+          return currentLeads
+      }
+    })
+  }
 
   const getLeadsByStatus = (status: LeadStatus) => {
     return leads.filter(lead => lead.status === status)
@@ -64,6 +130,8 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
       return
     }
 
+    const oldStatus = draggedLead.status
+
     // Update locally first for immediate feedback
     setLeads(prevLeads => 
       prevLeads.map(lead => 
@@ -73,16 +141,28 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
       )
     )
 
-    // Update in database
-    const { error } = await supabase
-      .from('leads')
-      .update({ status: newStatus })
-      .eq('id', draggedLead.id)
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: newStatus })
+        .eq('id', draggedLead.id)
 
-    if (error) {
+      if (error) {
+        throw error
+      }
+
+      // Note: No need to refresh leads manually - realtime will handle the update
+    } catch (error) {
       console.error('Error updating lead status:', error)
       // Revert on error
-      setLeads(initialLeads)
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.id === draggedLead.id 
+            ? { ...lead, status: oldStatus }
+            : lead
+        )
+      )
     }
 
     setDraggedLead(null)

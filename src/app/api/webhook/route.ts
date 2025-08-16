@@ -73,6 +73,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Trigger automation for new lead
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/automations/trigger`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trigger: 'lead_created',
+        tenant_id: data.tenant_id,
+        lead_id: data.id,
+        new_data: data,
+        metadata: {
+          source: 'webhook',
+          ip_address: request.headers.get('x-forwarded-for') || 'unknown'
+        }
+      }),
+    }).catch(err => console.error('Failed to trigger automation:', err))
+
     // Log webhook activity (voor debugging/monitoring)
     await logWebhookActivity(tenantId, 'success', body)
 

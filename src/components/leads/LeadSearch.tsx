@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, X, Plus } from 'lucide-react'
+import { Search, Filter, X, Plus, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import CSVImport from './CSVImport'
 import type { Database } from '@/types/database.types'
 
 type Lead = Database['public']['Tables']['leads']['Row']
@@ -31,6 +32,7 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [showCSVImport, setShowCSVImport] = useState(false)
   
   const supabase = createClient()
 
@@ -38,6 +40,58 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
   useEffect(() => {
     loadLeads()
   }, [tenantId])
+
+  // Setup realtime subscription for leads changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('leads-search-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads',
+          filter: `tenant_id=eq.${tenantId}`
+        },
+        (payload) => {
+          console.log('Realtime change in search:', payload)
+          handleRealtimeChange(payload)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [tenantId])
+
+  const handleRealtimeChange = (payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload
+
+    setLeads(currentLeads => {
+      switch (eventType) {
+        case 'INSERT':
+          // Add new lead if it doesn't already exist
+          if (!currentLeads.find(lead => lead.id === newRecord.id)) {
+            return [newRecord, ...currentLeads] // Add to beginning for newest first
+          }
+          return currentLeads
+
+        case 'UPDATE':
+          // Update existing lead
+          return currentLeads.map(lead =>
+            lead.id === newRecord.id ? { ...lead, ...newRecord } : lead
+          )
+
+        case 'DELETE':
+          // Remove deleted lead
+          return currentLeads.filter(lead => lead.id !== oldRecord.id)
+
+        default:
+          return currentLeads
+      }
+    })
+  }
 
   // Filter leads when search term or status changes
   useEffect(() => {
@@ -88,6 +142,11 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
   const clearSearch = () => {
     setSearchTerm('')
     setStatusFilter('all')
+  }
+
+  const handleImportComplete = () => {
+    loadLeads() // Reload leads after import
+    setShowCSVImport(false) // Close import modal
   }
 
   const getStatusColor = (status: LeadStatus) => {
@@ -156,6 +215,14 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
           >
             <Filter className="h-4 w-4" />
             Filters
+          </button>
+
+          <button
+            onClick={() => setShowCSVImport(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            CSV Import
           </button>
 
           <button
@@ -283,6 +350,26 @@ export default function LeadSearch({ tenantId, onLeadSelect, onNewLead }: LeadSe
           ))
         )}
       </div>
+
+      {/* CSV Import Modal */}
+      {showCSVImport && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">CSV Import</h2>
+              <button
+                onClick={() => setShowCSVImport(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <CSVImport onImportComplete={handleImportComplete} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

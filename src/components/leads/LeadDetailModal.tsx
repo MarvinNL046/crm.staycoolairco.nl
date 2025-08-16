@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Trash2, Calendar, Phone, Mail, Building2, Tag, FileText, Save } from 'lucide-react'
+import { X, Trash2, Calendar, Phone, Mail, Building2, Tag, FileText, Save, Send, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database.types'
 
@@ -39,6 +39,11 @@ export default function LeadDetailModal({ lead, onClose, onUpdate, onDelete }: L
   const [tags, setTags] = useState(lead.tags?.join(', ') || '')
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null)
+  const [sendingSMS, setSendingSMS] = useState(false)
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
+  const [messagingSuccess, setMessagingSuccess] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -92,6 +97,88 @@ export default function LeadDetailModal({ lead, onClose, onUpdate, onDelete }: L
     }
   }
 
+  const sendWelcomeEmail = async () => {
+    if (!lead.email) {
+      setError('Deze lead heeft geen email adres')
+      return
+    }
+
+    setSendingEmail(true)
+    setError(null)
+    setEmailSuccess(null)
+
+    try {
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId: lead.id,
+          tenantId: lead.tenant_id,
+          type: 'welcome',
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setEmailSuccess('Welkom email succesvol verzonden!')
+        setTimeout(() => setEmailSuccess(null), 5000)
+      } else {
+        throw new Error(result.error || 'Failed to send email')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Er is een fout opgetreden bij het verzenden van de email')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
+  const sendMessage = async (channel: 'sms' | 'whatsapp') => {
+    if (!lead.phone) {
+      setError('Deze lead heeft geen telefoonnummer')
+      return
+    }
+
+    const setSending = channel === 'sms' ? setSendingSMS : setSendingWhatsApp
+    setSending(true)
+    setError(null)
+    setMessagingSuccess(null)
+
+    try {
+      const response = await fetch('/api/messaging/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId: lead.id,
+          tenantId: lead.tenant_id,
+          type: 'welcome',
+          channel,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        const channelName = channel === 'sms' ? 'SMS' : 'WhatsApp'
+        setMessagingSuccess(`${channelName} bericht succesvol verzonden!`)
+        setTimeout(() => setMessagingSuccess(null), 5000)
+      } else {
+        throw new Error(result.error || `Failed to send ${channel} message`)
+      }
+    } catch (err: any) {
+      setError(err.message || `Er is een fout opgetreden bij het verzenden van het ${channel} bericht`)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendSMS = () => sendMessage('sms')
+  const sendWhatsApp = () => sendMessage('whatsapp')
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
@@ -129,6 +216,36 @@ export default function LeadDetailModal({ lead, onClose, onUpdate, onDelete }: L
           <div className="flex items-center gap-2">
             {!isEditing && (
               <>
+                {lead.email && (
+                  <button
+                    onClick={sendWelcomeEmail}
+                    disabled={sendingEmail}
+                    className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    {sendingEmail ? 'Bezig...' : 'Email'}
+                  </button>
+                )}
+                {lead.phone && (
+                  <>
+                    <button
+                      onClick={sendSMS}
+                      disabled={sendingSMS}
+                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <Phone className="h-4 w-4" />
+                      {sendingSMS ? 'Bezig...' : 'SMS'}
+                    </button>
+                    <button
+                      onClick={sendWhatsApp}
+                      disabled={sendingWhatsApp}
+                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {sendingWhatsApp ? 'Bezig...' : 'WhatsApp'}
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => setIsEditing(true)}
                   className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -187,6 +304,18 @@ export default function LeadDetailModal({ lead, onClose, onUpdate, onDelete }: L
           {error && (
             <div className="rounded-md bg-red-50 p-3">
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {emailSuccess && (
+            <div className="rounded-md bg-green-50 p-3">
+              <p className="text-sm text-green-800">{emailSuccess}</p>
+            </div>
+          )}
+
+          {messagingSuccess && (
+            <div className="rounded-md bg-blue-50 p-3">
+              <p className="text-sm text-blue-800">{messagingSuccess}</p>
             </div>
           )}
 
