@@ -16,21 +16,29 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    
+    console.log('Login attempt for:', email)
 
     try {
       // Create Supabase client
       const supabase = createClient()
       
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Supabase client created')
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
+      console.log('Login response:', { data, error })
+
       if (error) throw error
 
+      console.log('Login successful, redirecting to dashboard...')
       router.push('/dashboard')
       router.refresh()
     } catch (error: any) {
+      console.error('Login error:', error)
       setError(error.message || 'Er is een fout opgetreden bij het inloggen')
     } finally {
       setLoading(false)
