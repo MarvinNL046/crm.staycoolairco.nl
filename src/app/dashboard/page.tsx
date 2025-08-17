@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import RealtimeStatus from '@/components/ui/RealtimeStatus'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowDownIcon, ArrowUpIcon, TrendingUpIcon, UsersIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react'
+import LeadStatusChart from '@/components/dashboard/LeadStatusChart'
 
 // Helper functions to map database stages
 function getStageDisplayName(key: string): string {
@@ -118,9 +121,9 @@ export default async function DashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-background-secondary">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card shadow border-b border-border">
+      <div className="bg-card shadow border-b">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
@@ -239,8 +242,12 @@ export default async function DashboardPage() {
           {/* Left Column - Takes 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lead Status Distribution */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Lead Status Overzicht</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Lead Status Overzicht</CardTitle>
+                <CardDescription>Verdeling van leads per status</CardDescription>
+              </CardHeader>
+              <CardContent>
               <div className="space-y-4">
                 {stages?.map((stage) => {
                   const stageLeads = leads?.filter((lead: any) => lead.status === stage.key) || []
@@ -256,7 +263,7 @@ export default async function DashboardPage() {
                           {stageLeads.length} leads ({percentage.toFixed(0)}%)
                         </span>
                       </div>
-                      <div className="w-full bg-background-tertiary rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${getStageColor(stage.key)}`}
                           style={{ width: `${percentage}%` }}
@@ -266,13 +273,18 @@ export default async function DashboardPage() {
                   )
                 })}
               </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Conversion Funnel */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Conversie Trechter</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Conversie Trechter</CardTitle>
+                <CardDescription>Van lead tot klant</CardDescription>
+              </CardHeader>
+              <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border">
                   <span className="font-medium text-info">Nieuwe Leads</span>
                   <span className="text-2xl font-bold text-info">{newLeads || 0}</span>
                 </div>
@@ -281,7 +293,7 @@ export default async function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border">
                   <span className="font-medium text-warning">Gekwalificeerd</span>
                   <span className="text-2xl font-bold text-warning">{qualifiedLeads || 0}</span>
                 </div>
@@ -290,7 +302,7 @@ export default async function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border">
                   <span className="font-medium text-success">Gewonnen</span>
                   <span className="text-2xl font-bold text-success">{wonLeads || 0}</span>
                 </div>
@@ -305,11 +317,16 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Lead Sources */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Lead Bronnen</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Lead Bronnen</CardTitle>
+                <CardDescription>Waar komen je leads vandaan</CardDescription>
+              </CardHeader>
+              <CardContent>
               <div className="space-y-3">
                 {['website', 'email', 'phone', 'referral', 'other'].map(source => {
                   const sourceLeads = leads?.filter((lead: any) => lead.source === source) || []
@@ -348,14 +365,18 @@ export default async function DashboardPage() {
                   )
                 }).filter(Boolean)}
               </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Sidebar - Takes 1 column */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Snelle Acties</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Snelle Acties</CardTitle>
+              </CardHeader>
+              <CardContent>
               <div className="space-y-3">
                 <a
                   href="/dashboard/leads"
@@ -401,11 +422,16 @@ export default async function DashboardPage() {
                   </svg>
                 </a>
               </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Recent Activity Timeline */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Recente Activiteit</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Recente Activiteit</CardTitle>
+                <CardDescription>Laatste 5 leads</CardDescription>
+              </CardHeader>
+              <CardContent>
               <div className="flow-root">
                 {recentLeads && recentLeads.length > 0 ? (
                   <ul className="-mb-8">
@@ -443,11 +469,16 @@ export default async function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Nog geen activiteit</p>
                 )}
               </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Performance Metrics */}
-            <div className="bg-card shadow rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Prestaties</h3>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Prestaties</CardTitle>
+                <CardDescription>Performance indicatoren</CardDescription>
+              </CardHeader>
+              <CardContent>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm">
@@ -472,7 +503,8 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
