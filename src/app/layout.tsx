@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
-import ToastProvider from "@/components/ui/ToastProvider";
+import { ToastProvider } from "@/components/ui/use-toast";
 import "./globals.css";
 
 const lexend = Lexend({ 
