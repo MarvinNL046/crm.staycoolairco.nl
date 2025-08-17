@@ -100,7 +100,7 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
         { name: 'Instellingen', href: '/dashboard/settings', icon: Settings },
         { name: 'Team', href: '/dashboard/team', icon: Users },
         { name: 'Integraties', href: '/dashboard/integrations', icon: Package },
-        { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
+        { name: 'API Keys', href: '/dashboard/apikeys', icon: Key },
         { name: 'Branding', href: '/dashboard/branding', icon: Palette },
         { name: 'Database', href: '/dashboard/database', icon: Database },
       ]
