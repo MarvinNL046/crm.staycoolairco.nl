@@ -34,7 +34,7 @@ import {
   Bell
 } from 'lucide-react'
 import { useSuperAdmin } from '@/hooks/useSuperAdmin'
-import { SimpleThemeToggle } from '@/components/theme/ThemeToggle'
+import { SafeThemeToggle } from '@/components/theme/SafeThemeToggle'
 
 interface SidebarNavProps {
   user: User
@@ -245,7 +245,7 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
               {/* Theme Toggle */}
               {!collapsed && (
                 <div className="ml-2">
-                  <SimpleThemeToggle />
+                  <SafeThemeToggle />
                 </div>
               )}
             </button>
@@ -261,7 +261,7 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
                    }}>
                 {collapsed && (
                   <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-                    <SimpleThemeToggle />
+                    <SafeThemeToggle />
                   </div>
                 )}
                 <button

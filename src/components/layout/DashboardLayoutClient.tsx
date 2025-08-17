@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, createContext, useContext, useEffect } from 'react'
-import SidebarNav from './SidebarNav'
+import { useState, createContext, useContext } from 'react'
+import dynamic from 'next/dynamic'
 import { User } from '@supabase/supabase-js'
+
+// Dynamically import SidebarNav to ensure theme is available
+const SidebarNav = dynamic(() => import('./SidebarNav'), {
+  ssr: false,
+  loading: () => <div className="w-64 bg-gray-100 dark:bg-gray-900" />
+})
 
 interface SidebarContextType {
   collapsed: boolean
