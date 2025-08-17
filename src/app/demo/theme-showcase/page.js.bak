@@ -1,0 +1,439 @@
+'use client'
+
+import { useState } from 'react'
+import { useTheme } from '@/lib/theme/ThemeProvider'
+import { FileText, Euro, Calendar, Plus, Search, Filter, ChevronRight, Send, Save, X } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
+
+export default function ThemeShowcase() {
+  const { colors, resolvedTheme } = useTheme()
+  const [showModal, setShowModal] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    notes: ''
+  })
+
+  const getStatusColor = (status) => {
+    const isDark = resolvedTheme === 'dark'
+    const statusColors = {
+      draft: isDark ? 'bg-neutral-800 text-neutral-300' : 'bg-neutral-100 text-neutral-700',
+      sent: isDark ? 'bg-primary-900/30 text-primary-400' : 'bg-primary-100 text-primary-700',
+      paid: isDark ? 'bg-success-900/30 text-success-400' : 'bg-success-100 text-success-700',
+      overdue: isDark ? 'bg-error-900/30 text-error-400' : 'bg-error-100 text-error-700',
+    }
+    return statusColors[status] || (isDark ? 'bg-neutral-800 text-neutral-300' : 'bg-neutral-100 text-neutral-700')
+  }
+
+  const demoInvoices = [
+    { id: 1, invoice_number: 'INV-2024-001', customer_name: 'Jan Jansen', customer_company: 'Jansen BV', issue_date: '2024-01-15', total_amount: 1250.00, status: 'paid' },
+    { id: 2, invoice_number: 'INV-2024-002', customer_name: 'Marie de Vries', customer_company: 'De Vries Holding', issue_date: '2024-01-18', total_amount: 2750.50, status: 'sent' },
+    { id: 3, invoice_number: 'QTE-2024-003', customer_name: 'Peter Bakker', customer_company: 'Bakker & Co', issue_date: '2024-01-20', total_amount: 850.00, status: 'draft' },
+    { id: 4, invoice_number: 'INV-2024-004', customer_name: 'Sara Visser', customer_company: 'Visser Groep', issue_date: '2024-01-10', total_amount: 1875.00, status: 'overdue' },
+  ]
+
+  const stats = {
+    total: 6725.50,
+    paid: 1250.00,
+    pending: 2750.50,
+    overdue: 1875.00
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount || 0)
+  }
+
+  const formatDate = (date) => {
+    if (!date) return '-'
+    return new Date(date).toLocaleDateString('nl-NL')
+  }
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text.primary }}>
+          Theme Showcase - Invoice & Forms
+        </h1>
+        <p className="text-lg" style={{ color: colors.text.secondary }}>
+          Demonstratie van de nieuwe theme-aware componenten voor facturatie en formulieren
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Statistieken Kaarten
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg shadow p-6" style={{ backgroundColor: colors.background.elevated }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>Totaal</p>
+                <p className="text-2xl font-bold" style={{ color: colors.text.primary }}>{formatCurrency(stats.total)}</p>
+              </div>
+              <Euro className="h-8 w-8" style={{ color: colors.text.tertiary }} />
+            </div>
+          </div>
+          <div className="rounded-lg shadow p-6" style={{ backgroundColor: colors.background.elevated }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>Betaald</p>
+                <p className="text-2xl font-bold" style={{ color: colors.status.success }}>{formatCurrency(stats.paid)}</p>
+              </div>
+              <Euro className="h-8 w-8" style={{ color: colors.status.success, opacity: 0.5 }} />
+            </div>
+          </div>
+          <div className="rounded-lg shadow p-6" style={{ backgroundColor: colors.background.elevated }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>Openstaand</p>
+                <p className="text-2xl font-bold" style={{ color: colors.status.info }}>{formatCurrency(stats.pending)}</p>
+              </div>
+              <Euro className="h-8 w-8" style={{ color: colors.status.info, opacity: 0.5 }} />
+            </div>
+          </div>
+          <div className="rounded-lg shadow p-6" style={{ backgroundColor: colors.background.elevated }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>Verlopen</p>
+                <p className="text-2xl font-bold" style={{ color: colors.status.error }}>{formatCurrency(stats.overdue)}</p>
+              </div>
+              <Euro className="h-8 w-8" style={{ color: colors.status.error, opacity: 0.5 }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Search and Filter */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Zoeken en Filteren
+        </h2>
+        <div className="rounded-lg shadow" style={{ backgroundColor: colors.background.elevated }}>
+          <div className="p-4" style={{ borderBottom: `1px solid ${colors.border.primary}` }}>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: colors.text.tertiary }} />
+                  <input
+                    type="text"
+                    placeholder="Zoek op nummer, klant of bedrijf..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{
+                      backgroundColor: colors.background.input,
+                      border: `1px solid ${colors.border.input}`,
+                      color: colors.text.primary,
+                      '--tw-ring-color': colors.border.focus
+                    }}
+                  />
+                </div>
+              </div>
+              <select
+                className="px-4 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              >
+                <option value="all">Alle statussen</option>
+                <option value="draft">Concept</option>
+                <option value="sent">Verzonden</option>
+                <option value="paid">Betaald</option>
+                <option value="overdue">Verlopen</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Table */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Tabel met Status Badges
+        </h2>
+        <div className="rounded-lg shadow overflow-hidden" style={{ backgroundColor: colors.background.elevated }}>
+          <table className="w-full">
+            <thead style={{ backgroundColor: colors.background.secondary }}>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                  Nummer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                  Klant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                  Datum
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                  Bedrag
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {demoInvoices.map((invoice, index) => (
+                <tr key={invoice.id} style={{ borderBottom: index < demoInvoices.length - 1 ? `1px solid ${colors.border.primary}` : 'none' }}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                      {invoice.invoice_number}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm" style={{ color: colors.text.primary }}>{invoice.customer_name}</div>
+                    <div className="text-sm" style={{ color: colors.text.secondary }}>{invoice.customer_company}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm" style={{ color: colors.text.primary }}>{formatDate(invoice.issue_date)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                      {formatCurrency(invoice.total_amount)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
+                      {invoice.status === 'draft' && 'Concept'}
+                      {invoice.status === 'sent' && 'Verzonden'}
+                      {invoice.status === 'paid' && 'Betaald'}
+                      {invoice.status === 'overdue' && 'Verlopen'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Form Inputs */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Formulier Velden
+        </h2>
+        <div className="rounded-lg shadow p-6" style={{ backgroundColor: colors.background.elevated }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                Naam
+              </label>
+              <input
+                type="text"
+                placeholder="Voer naam in..."
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                E-mail
+              </label>
+              <input
+                type="email"
+                placeholder="email@voorbeeld.nl"
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                Telefoon
+              </label>
+              <input
+                type="tel"
+                placeholder="+31 6 12345678"
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                Bron
+              </label>
+              <select
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              >
+                <option value="manual">Handmatig</option>
+                <option value="website">Website</option>
+                <option value="referral">Referral</option>
+                <option value="social">Social Media</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                Notities
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Voeg notities toe..."
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  '--tw-ring-color': colors.border.focus
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Buttons */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Knoppen
+        </h2>
+        <div className="flex flex-wrap gap-4">
+          <button
+            className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-colors"
+            style={{ backgroundColor: colors.interactive.primary }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primaryHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primary}
+          >
+            <Plus className="h-5 w-5" />
+            Primaire Knop
+          </button>
+          
+          <button
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            style={{ 
+              backgroundColor: colors.interactive.secondary,
+              color: colors.text.primary,
+              border: `1px solid ${colors.border.primary}`
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.secondaryHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.interactive.secondary}
+          >
+            <Save className="h-5 w-5" />
+            Secundaire Knop
+          </button>
+          
+          <button
+            className="px-4 py-2 text-white rounded-lg flex items-center gap-2 transition-colors"
+            style={{ backgroundColor: colors.status.success }}
+          >
+            <Send className="h-5 w-5" />
+            Succes Knop
+          </button>
+          
+          <button
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            style={{ color: colors.interactive.danger }}
+            onMouseEnter={(e) => e.currentTarget.style.color = colors.interactive.dangerHover}
+            onMouseLeave={(e) => e.currentTarget.style.color = colors.interactive.danger}
+          >
+            <X className="h-5 w-5" />
+            Danger Knop
+          </button>
+
+          <button
+            className="px-4 py-2 rounded-lg opacity-50 cursor-not-allowed"
+            style={{ 
+              backgroundColor: colors.interactive.primary,
+              color: 'white'
+            }}
+            disabled
+          >
+            Uitgeschakelde Knop
+          </button>
+        </div>
+      </section>
+
+      {/* Modal Example */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+          Modal Voorbeeld
+        </h2>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 text-white rounded-lg transition-colors"
+          style={{ backgroundColor: colors.interactive.primary }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primaryHover}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primary}
+        >
+          Open Modal
+        </button>
+      </section>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="rounded-lg max-w-md w-full" style={{ backgroundColor: colors.background.elevated }}>
+            <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${colors.border.primary}` }}>
+              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Modal Titel</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="transition-colors"
+                style={{ color: colors.text.tertiary }}
+                onMouseEnter={(e) => e.currentTarget.style.color = colors.text.primary}
+                onMouseLeave={(e) => e.currentTarget.style.color = colors.text.tertiary}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <p style={{ color: colors.text.secondary }}>
+                Dit is een voorbeeld van een modal met de nieuwe theme kleuren. Alle elementen zijn theme-aware en passen zich automatisch aan bij het wisselen tussen light en dark mode.
+              </p>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 rounded-md transition-colors"
+                  style={{ 
+                    border: `1px solid ${colors.border.primary}`,
+                    color: colors.text.primary,
+                    backgroundColor: colors.background.elevated
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.secondary}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.background.elevated}
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 text-white rounded-md transition-colors"
+                  style={{ backgroundColor: colors.interactive.primary }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primaryHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.interactive.primary}
+                >
+                  Bevestigen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

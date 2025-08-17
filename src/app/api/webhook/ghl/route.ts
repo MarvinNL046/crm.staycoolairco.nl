@@ -48,6 +48,14 @@ export async function POST(request: NextRequest) {
       status: 'new' as const,
       notes: body.notes || body.message || null,
       tags: extractTags(body),
+      
+      // Address fields - support multiple field name variations
+      street: body.street || body.address || body.street_address || null,
+      house_number: body.house_number || body.housenumber || body.number || null,
+      postal_code: body.postal_code || body.postalcode || body.zip || body.zipcode || null,
+      city: body.city || body.town || null,
+      province: body.province || body.state || body.region || null,
+      country: body.country || 'Nederland',
     }
 
     // Insert lead

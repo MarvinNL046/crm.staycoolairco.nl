@@ -34,6 +34,7 @@ import {
   Bell
 } from 'lucide-react'
 import { useSuperAdmin } from '@/hooks/useSuperAdmin'
+import { SimpleThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface SidebarNavProps {
   user: User
@@ -67,6 +68,7 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
         { name: 'Klanten', href: '/dashboard/customers', icon: Building2 },
         { name: 'Contacten', href: '/dashboard/contacts', icon: UserCircle },
         { name: 'Deals', href: '/dashboard/deals', icon: CreditCard },
+        { name: 'Facturatie', href: '/invoicing', icon: FileText },
       ]
     },
     {
@@ -122,19 +124,35 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
   return (
     <>
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-gray-900 transition-all duration-300 ${
+      <div className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 ${
         collapsed ? 'w-16' : 'w-64'
-      }`}>
+      }`}
+           style={{ 
+             backgroundColor: 'var(--background-sidebar)',
+             borderRight: '1px solid var(--border-primary)' 
+           }}>
         {/* Logo and collapse button */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-gray-800">
+        <div className="flex h-16 items-center justify-between px-4" 
+             style={{ borderBottom: '1px solid var(--border-primary)' }}>
           {!collapsed && (
-            <Link href="/dashboard" className="text-xl font-bold text-white">
+            <Link href="/dashboard" className="text-xl font-bold hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--text-inverse)' }}>
               StayCool CRM
             </Link>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+            className="p-1 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 hover:bg-opacity-20 hover:bg-white"
+            style={{ 
+              color: 'var(--text-secondary)',
+              '--tw-ring-color': 'var(--border-focus)'
+            } as React.CSSProperties}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-inverse)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             {collapsed ? (
               <ChevronRight className="h-5 w-5" />
@@ -149,7 +167,8 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
           {navigation.map((section) => (
             <div key={section.name} className="mb-6">
               {!collapsed && (
-                <h3 className="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                <h3 className="px-4 text-xs font-semibold uppercase tracking-wider mb-2"
+                    style={{ color: 'var(--text-tertiary)' }}>
                   {section.name}
                 </h3>
               )}
@@ -161,11 +180,24 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                      }`}
+                      className="flex items-center px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md mx-2 focus:outline-none focus:ring-2"
+                      style={{
+                        backgroundColor: isActive ? 'var(--interactive-primary)' : 'transparent',
+                        color: isActive ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                        '--tw-ring-color': 'var(--border-focus)'
+                      } as React.CSSProperties}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.backgroundColor = 'var(--interactive-secondary-hover)';
+                          e.currentTarget.style.color = 'var(--text-inverse)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                       title={collapsed ? item.name : undefined}
                     >
                       <Icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
@@ -179,27 +211,41 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
         </nav>
 
         {/* User section */}
-        <div className="border-t border-gray-800 p-4">
+        <div className="p-4" style={{ borderTop: '1px solid var(--border-primary)' }}>
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex w-full items-center text-sm focus:outline-none focus:ring-2 focus:ring-white"
+              className="flex w-full items-center text-sm focus:outline-none focus:ring-2 rounded-md p-2 transition-all duration-200 hover:bg-opacity-20 hover:bg-white"
+              style={{ '--tw-ring-color': 'var(--border-focus)' } as React.CSSProperties}
             >
-              <div className={`h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white ${
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-medium ${
                 collapsed ? '' : 'mr-3'
-              }`}>
+              }`}
+                   style={{
+                     backgroundColor: 'var(--interactive-primary)',
+                     color: 'var(--text-inverse)'
+                   }}>
                 {user.email?.[0].toUpperCase()}
               </div>
               {!collapsed && (
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className="text-sm font-medium truncate"
+                     style={{ color: 'var(--text-inverse)' }}>
                     {user.email}
                   </p>
                   {currentTenant && (
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs truncate"
+                       style={{ color: 'var(--text-tertiary)' }}>
                       {currentTenant.name}
                     </p>
                   )}
+                </div>
+              )}
+              
+              {/* Theme Toggle */}
+              {!collapsed && (
+                <div className="ml-2">
+                  <SimpleThemeToggle />
                 </div>
               )}
             </button>
@@ -207,10 +253,27 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
             {userMenuOpen && (
               <div className={`absolute bottom-full mb-2 ${
                 collapsed ? 'left-0' : 'right-0'
-              } w-48 rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5`}>
+              } w-48 rounded-md py-1 shadow-lg ring-1 ring-opacity-20`}
+                   style={{
+                     backgroundColor: 'var(--background-elevated)',
+                     borderColor: 'var(--border-primary)',
+                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                   }}>
+                {collapsed && (
+                  <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+                    <SimpleThemeToggle />
+                  </div>
+                )}
                 <button
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm transition-all duration-200 hover:bg-opacity-20 hover:bg-red-500"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--interactive-danger)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
                 >
                   <LogOut className="h-4 w-4" />
                   Uitloggen
@@ -224,7 +287,8 @@ export default function SidebarNav({ user, tenants }: SidebarNavProps) {
       {/* Mobile overlay */}
       {!collapsed && (
         <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={() => setCollapsed(true)}
         />
       )}

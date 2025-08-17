@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, Search, Calendar, Euro, Building2, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, Plus, Search, Calendar, Euro, Building2, TrendingUp, Clock, CheckCircle2, FileSearch, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 interface Deal {
   id: string;
@@ -22,8 +23,22 @@ interface Deal {
   notes?: string;
 }
 
+interface Quote {
+  id: string;
+  invoice_number: string;
+  customer_name: string;
+  customer_company: string;
+  total_amount: number;
+  quote_valid_until: string;
+  status: string;
+  created_at: string;
+  lead?: any;
+  contact?: any;
+}
+
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStage, setFilterStage] = useState<string>("all");
@@ -32,6 +47,7 @@ export default function DealsPage() {
 
   useEffect(() => {
     fetchDeals();
+    fetchQuotes();
   }, []);
 
   const fetchDeals = async () => {
@@ -111,6 +127,18 @@ export default function DealsPage() {
       console.error("Error fetching deals:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQuotes = async () => {
+    try {
+      const response = await fetch('/api/invoices/open-quotes');
+      if (response.ok) {
+        const data = await response.json();
+        setQuotes(data);
+      }
+    } catch (error) {
+      console.error("Error fetching quotes:", error);
     }
   };
 
@@ -351,6 +379,119 @@ export default function DealsPage() {
         <div className="text-center py-12">
           <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-gray-500">Geen deals gevonden</p>
+        </div>
+      )}
+
+      {/* Open Quotes Section */}
+      {quotes.length > 0 && (
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Openstaande Offertes</h2>
+              <p className="text-gray-600 mt-1">Offertes die kunnen worden omgezet in deals</p>
+            </div>
+            <Link href="/invoicing/new?type=quote">
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileSearch className="h-4 w-4" />
+                Nieuwe Offerte
+              </Button>
+            </Link>
+          </div>
+
+          <div className="space-y-4">
+            {quotes.map((quote) => {
+              const daysUntilExpiry = quote.quote_valid_until 
+                ? Math.ceil((new Date(quote.quote_valid_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                : null;
+              const isExpiring = daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry > 0;
+              const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
+
+              return (
+                <Card key={quote.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          <div className="bg-blue-100 p-3 rounded-full">
+                            <FileSearch className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold">Offerte {quote.invoice_number}</h3>
+                              {isExpired && (
+                                <Badge className="bg-red-100 text-red-800">Verlopen</Badge>
+                              )}
+                              {isExpiring && !isExpired && (
+                                <Badge className="bg-orange-100 text-orange-800">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  {daysUntilExpiry} {daysUntilExpiry === 1 ? 'dag' : 'dagen'}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                <span>{quote.customer_name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Euro className="h-4 w-4" />
+                                <span className="font-semibold">€{quote.total_amount.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>Geldig tot: {new Date(quote.quote_valid_until).toLocaleDateString('nl-NL')}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                <span>{new Date(quote.created_at).toLocaleDateString('nl-NL')}</span>
+                              </div>
+                            </div>
+
+                            {quote.customer_company && (
+                              <p className="text-sm text-gray-500 mt-2">{quote.customer_company}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 ml-4">
+                        <Link href={`/invoicing/${quote.id}`}>
+                          <Button variant="outline" size="sm">
+                            Bekijken
+                          </Button>
+                        </Link>
+                        {!isExpired && (
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={async () => {
+                              if (confirm('Weet je zeker dat je deze offerte wilt omzetten naar een factuur?')) {
+                                try {
+                                  const response = await fetch(`/api/invoices/${quote.id}/convert`, {
+                                    method: 'POST'
+                                  });
+                                  if (response.ok) {
+                                    alert('Offerte is succesvol omgezet naar factuur!');
+                                    fetchQuotes();
+                                  }
+                                } catch (error) {
+                                  alert('Er is een fout opgetreden bij het omzetten van de offerte');
+                                }
+                              }
+                            }}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Omzetten
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

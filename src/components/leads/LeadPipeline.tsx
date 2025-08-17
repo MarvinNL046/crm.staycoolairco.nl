@@ -19,13 +19,13 @@ interface LeadPipelineProps {
 }
 
 const statusColors: Record<LeadStatus, string> = {
-  new: 'bg-gray-100 text-gray-800',
-  contacted: 'bg-blue-100 text-blue-800',
-  qualified: 'bg-purple-100 text-purple-800',
-  proposal: 'bg-yellow-100 text-yellow-800',
-  won: 'bg-green-100 text-green-800',
-  lost: 'bg-red-100 text-red-800',
-  converted: 'bg-green-100 text-green-800',
+  new: 'bg-background-secondary text-foreground border border-border',
+  contacted: 'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  qualified: 'bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800',
+  proposal: 'bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800',
+  won: 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800',
+  lost: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800',
+  converted: 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800',
 }
 
 const statusLabels: Record<LeadStatus, string> = {
@@ -207,15 +207,15 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
     <>
       {/* View Mode Toggle */}
       <div className="flex justify-end mb-4">
-        <div className="inline-flex rounded-md shadow-sm" role="group">
+        <div className="inline-flex rounded-md shadow-sm border border-border" role="group">
           <button
             type="button"
             onClick={() => setViewMode('grid')}
             title="Grid weergave (schaalt mee met scherm)"
-            className={`px-4 py-2 text-sm font-medium rounded-l-lg border flex items-center gap-2 ${
+            className={`px-4 py-2 text-sm font-medium rounded-l-lg border-r border-border flex items-center gap-2 transition-colors ${
               viewMode === 'grid'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card text-foreground-secondary hover:bg-background-secondary'
             }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,10 +227,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
             type="button"
             onClick={() => setViewMode('scroll')}
             title="Horizontale scroll (klassieke Kanban)"
-            className={`px-4 py-2 text-sm font-medium rounded-r-lg border flex items-center gap-2 ${
+            className={`px-4 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 transition-colors ${
               viewMode === 'scroll'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card text-foreground-secondary hover:bg-background-secondary'
             }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -257,22 +257,22 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}
           >
-            <div className={`bg-gray-100 rounded-lg p-4 transition-all duration-200 ${
-              draggedOverStatus === status ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+            <div className={`bg-background-tertiary rounded-lg p-4 transition-all duration-200 border border-border ${
+              draggedOverStatus === status ? 'ring-2 ring-primary bg-background-secondary' : ''
             }`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-foreground">
                   {statusLabels[status]}
                 </h3>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground bg-background-secondary px-2 py-1 rounded-full border border-border">
                   {stageLeads.length}
                 </span>
               </div>
               
               <div className="space-y-3 min-h-[500px]">
                 {stageLeads.length === 0 && (
-                  <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-sm text-gray-500">Sleep leads hierheen</p>
+                  <div className="flex items-center justify-center h-32 border-2 border-dashed border-border rounded-lg bg-background-secondary">
+                    <p className="text-sm text-muted-foreground">Sleep leads hierheen</p>
                   </div>
                 )}
                 {stageLeads.map((lead) => (
@@ -281,17 +281,17 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead)}
                     onClick={() => handleLeadClick(lead)}
-                    className={`bg-white rounded-lg p-3 shadow-sm cursor-move hover:shadow-md transition-all duration-200 ${
+                    className={`bg-card rounded-lg p-3 shadow-sm cursor-move hover:shadow-md transition-all duration-200 border border-border hover:border-primary/50 ${
                       draggedLead?.id === lead.id ? 'opacity-50' : ''
                     }`}
                   >
                     {/* Header with name and avatar */}
                     <div className="flex items-center justify-between gap-1 mb-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm truncate hover:underline">
+                        <h4 className="font-medium text-foreground text-sm truncate hover:underline">
                           {lead.name}
                           {lead.created_at && (
-                            <span className="text-gray-500 font-normal">
+                            <span className="text-muted-foreground font-normal">
                               {' | '}
                               {new Date(lead.created_at).toLocaleDateString('nl-NL', {
                                 day: 'numeric',
@@ -302,8 +302,8 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                         </h4>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center border border-gray-300">
-                          <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 bg-background-secondary rounded-full flex items-center justify-center border border-border">
+                          <svg className="w-3 h-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
@@ -314,15 +314,15 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                     <div className="space-y-1 mb-2">
                       {lead.source && (
                         <div className="flex text-xs">
-                          <span className="font-semibold text-gray-600 mr-2">Lead bron:</span>
-                          <span className="text-gray-800">{lead.source}</span>
+                          <span className="font-semibold text-foreground-secondary mr-2">Lead bron:</span>
+                          <span className="text-foreground">{lead.source}</span>
                         </div>
                       )}
                       
                       {lead.value && (
                         <div className="flex text-xs">
-                          <span className="font-semibold text-gray-600 mr-2">Waarde:</span>
-                          <span className="text-gray-800">
+                          <span className="font-semibold text-foreground-secondary mr-2">Waarde:</span>
+                          <span className="text-foreground">
                             €{lead.value.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -330,33 +330,33 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       
                       {lead.company && (
                         <div className="flex text-xs">
-                          <span className="font-semibold text-gray-600 mr-2">Bedrijf:</span>
-                          <span className="text-gray-800 truncate">{lead.company}</span>
+                          <span className="font-semibold text-foreground-secondary mr-2">Bedrijf:</span>
+                          <span className="text-foreground truncate">{lead.company}</span>
                         </div>
                       )}
                     </div>
                     
                     {/* Action icons */}
-                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
                       {/* Phone */}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation()
                           if (lead.phone) window.open(`tel:${lead.phone}`)
                         }}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Bellen"
                       >
-                        <Phone className="h-4 w-4 text-gray-500" />
+                        <Phone className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" />
                       </button>
                       
                       {/* Messages */}
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Berichten"
                       >
-                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </button>
@@ -364,10 +364,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       {/* Tags */}
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Tags"
                       >
-                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                         </svg>
                       </button>
@@ -375,10 +375,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       {/* Notes */}
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Notities"
                       >
-                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </button>
@@ -386,10 +386,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       {/* Tasks */}
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Taken"
                       >
-                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                         </svg>
                       </button>
@@ -397,10 +397,10 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       {/* Calendar */}
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-background-secondary rounded transition-colors"
                         title="Afspraken"
                       >
-                        <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 text-muted-foreground hover:text-foreground-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </button>
@@ -408,7 +408,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
                       {/* Tags display */}
                       {lead.tags && lead.tags.length > 0 && (
                         <div className="flex-1 flex justify-end">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground bg-background-secondary px-2 py-1 rounded-full border border-border">
                             {lead.tags.length} tag{lead.tags.length > 1 ? 's' : ''}
                           </span>
                         </div>
@@ -421,7 +421,7 @@ export default function LeadPipeline({ stages, initialLeads, tenantId }: LeadPip
               {status === 'new' && (
                 <button 
                   onClick={() => setShowLeadForm(true)}
-                  className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-2 rounded-md hover:bg-gray-200 transition-colors"
+                  className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-foreground-secondary hover:text-foreground py-2 rounded-md hover:bg-background-secondary border border-border border-dashed hover:border-primary transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Nieuwe lead

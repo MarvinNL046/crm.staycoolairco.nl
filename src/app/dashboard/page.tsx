@@ -118,17 +118,17 @@ export default async function DashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background-secondary">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-card shadow border-b border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-foreground">
                   Welkom bij {tenant?.name || 'StayCool CRM'}
                 </h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-foreground-secondary">
                   Beheer je leads en groei je airco business
                 </p>
               </div>
@@ -142,20 +142,20 @@ export default async function DashboardPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Total Leads */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-foreground-secondary truncate">
                       Totaal Leads
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-foreground">
                       {totalLeads || 0}
                     </dd>
                   </dl>
@@ -165,20 +165,20 @@ export default async function DashboardPage() {
           </div>
 
           {/* New Leads */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-foreground-secondary truncate">
                       Nieuwe Leads
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-foreground">
                       {newLeads || 0}
                     </dd>
                   </dl>
@@ -188,20 +188,20 @@ export default async function DashboardPage() {
           </div>
 
           {/* Qualified Leads */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-foreground-secondary truncate">
                       Gekwalificeerd
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-foreground">
                       {qualifiedLeads || 0}
                     </dd>
                   </dl>
@@ -211,20 +211,20 @@ export default async function DashboardPage() {
           </div>
 
           {/* Won Leads */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg border border-border">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-foreground-secondary truncate">
                       Gewonnen Deals
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-foreground">
                       {wonLeads || 0}
                     </dd>
                   </dl>
@@ -239,8 +239,8 @@ export default async function DashboardPage() {
           {/* Left Column - Takes 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lead Status Distribution */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Status Overzicht</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Lead Status Overzicht</h3>
               <div className="space-y-4">
                 {stages?.map((stage) => {
                   const stageLeads = leads?.filter((lead: any) => lead.status === stage.key) || []
@@ -249,14 +249,14 @@ export default async function DashboardPage() {
                   return (
                     <div key={stage.id} className="relative">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-foreground-secondary">
                           {getStageDisplayName(stage.key)}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {stageLeads.length} leads ({percentage.toFixed(0)}%)
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-background-tertiary rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${getStageColor(stage.key)}`}
                           style={{ width: `${percentage}%` }}
@@ -269,37 +269,37 @@ export default async function DashboardPage() {
             </div>
 
             {/* Conversion Funnel */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversie Trechter</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Conversie Trechter</h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="font-medium text-blue-900">Nieuwe Leads</span>
-                  <span className="text-2xl font-bold text-blue-600">{newLeads || 0}</span>
+                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                  <span className="font-medium text-info">Nieuwe Leads</span>
+                  <span className="text-2xl font-bold text-info">{newLeads || 0}</span>
                 </div>
                 <div className="flex justify-center">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <span className="font-medium text-purple-900">Gekwalificeerd</span>
-                  <span className="text-2xl font-bold text-purple-600">{qualifiedLeads || 0}</span>
+                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                  <span className="font-medium text-warning">Gekwalificeerd</span>
+                  <span className="text-2xl font-bold text-warning">{qualifiedLeads || 0}</span>
                 </div>
                 <div className="flex justify-center">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium text-green-900">Gewonnen</span>
-                  <span className="text-2xl font-bold text-green-600">{wonLeads || 0}</span>
+                <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg border border-border">
+                  <span className="font-medium text-success">Gewonnen</span>
+                  <span className="text-2xl font-bold text-success">{wonLeads || 0}</span>
                 </div>
               </div>
               {totalLeads > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Conversie ratio</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-muted-foreground">Conversie ratio</span>
+                    <span className="font-medium text-foreground">
                       {((wonLeads / totalLeads) * 100).toFixed(1)}%
                     </span>
                   </div>
@@ -308,8 +308,8 @@ export default async function DashboardPage() {
             </div>
 
             {/* Lead Sources */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Bronnen</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Lead Bronnen</h3>
               <div className="space-y-3">
                 {['website', 'email', 'phone', 'referral', 'other'].map(source => {
                   const sourceLeads = leads?.filter((lead: any) => lead.source === source) || []
@@ -336,14 +336,14 @@ export default async function DashboardPage() {
                   return (
                     <div key={source} className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-5 w-5 text-muted-foreground mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sourceIcons[source]} />
                         </svg>
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-foreground-secondary">
                           {sourceLabels[source]}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-900 font-semibold">{sourceCount}</span>
+                      <span className="text-sm text-foreground font-semibold">{sourceCount}</span>
                     </div>
                   )
                 }).filter(Boolean)}
@@ -354,49 +354,49 @@ export default async function DashboardPage() {
           {/* Right Sidebar - Takes 1 column */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Snelle Acties</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Snelle Acties</h3>
               <div className="space-y-3">
                 <a
                   href="/dashboard/leads"
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors border border-transparent hover:border-border"
                 >
                   <div className="flex items-center">
-                    <svg className="h-5 w-5 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-info mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span className="text-sm font-medium text-gray-700">Beheer Leads</span>
+                    <span className="text-sm font-medium text-foreground-secondary">Beheer Leads</span>
                   </div>
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </a>
                 <a
                   href="/dashboard/automations"
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors border border-transparent hover:border-border"
                 >
                   <div className="flex items-center">
-                    <svg className="h-5 w-5 text-purple-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-warning mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    <span className="text-sm font-medium text-gray-700">Automatiseringen</span>
+                    <span className="text-sm font-medium text-foreground-secondary">Automatiseringen</span>
                   </div>
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </a>
                 <a
                   href="/dashboard/settings"
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors border border-transparent hover:border-border"
                 >
                   <div className="flex items-center">
-                    <svg className="h-5 w-5 text-gray-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-muted-foreground mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="text-sm font-medium text-gray-700">Instellingen</span>
+                    <span className="text-sm font-medium text-foreground-secondary">Instellingen</span>
                   </div>
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </a>
@@ -404,8 +404,8 @@ export default async function DashboardPage() {
             </div>
 
             {/* Recent Activity Timeline */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recente Activiteit</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Recente Activiteit</h3>
               <div className="flow-root">
                 {recentLeads && recentLeads.length > 0 ? (
                   <ul className="-mb-8">
@@ -413,24 +413,24 @@ export default async function DashboardPage() {
                       <li key={lead.id}>
                         <div className="relative pb-8">
                           {idx !== recentLeads.length - 1 && (
-                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" />
+                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-border" />
                           )}
                           <div className="relative flex space-x-3">
                             <div>
-                              <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${getStageColor(lead.status)}`}>
+                              <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-background ${getStageColor(lead.status)}`}>
                                 <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-foreground">
                                 {lead.name}
                               </p>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-foreground-secondary">
                                 {getStageDisplayName(lead.status)}
                               </p>
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 {formatRelativeTime(new Date(lead.created_at))}
                               </p>
                             </div>
@@ -440,33 +440,33 @@ export default async function DashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">Nog geen activiteit</p>
+                  <p className="text-sm text-muted-foreground">Nog geen activiteit</p>
                 )}
               </div>
             </div>
 
             {/* Performance Metrics */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Prestaties</h3>
+            <div className="bg-card shadow rounded-lg p-6 border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Prestaties</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Gemiddelde doorlooptijd</span>
-                    <span className="font-medium text-gray-900">-</span>
+                    <span className="text-muted-foreground">Gemiddelde doorlooptijd</span>
+                    <span className="font-medium text-foreground">-</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Win rate</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-muted-foreground">Win rate</span>
+                    <span className="font-medium text-foreground">
                       {totalLeads > 0 ? `${((wonLeads / totalLeads) * 100).toFixed(0)}%` : '-'}
                     </span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Verloren deals</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-muted-foreground">Verloren deals</span>
+                    <span className="font-medium text-foreground">
                       {leads?.filter((l: any) => l.status === 'lost').length || 0}
                     </span>
                   </div>

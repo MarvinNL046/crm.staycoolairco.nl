@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database.types'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 type Lead = Database['public']['Tables']['leads']['Insert']
 
@@ -14,6 +15,7 @@ interface LeadFormProps {
 }
 
 export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps) {
+  const { colors } = useTheme()
   const [formData, setFormData] = useState<Partial<Lead>>({
     name: '',
     email: '',
@@ -75,12 +77,15 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Nieuwe Lead</h2>
+      <div className="rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.background.elevated }}>
+        <div className="sticky top-0 p-4 flex items-center justify-between" style={{ backgroundColor: colors.background.elevated, borderBottom: `1px solid ${colors.border.primary}` }}>
+          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Nieuwe Lead</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="transition-colors"
+            style={{ color: colors.text.tertiary }}
+            onMouseEnter={(e) => e.currentTarget.style.color = colors.text.primary}
+            onMouseLeave={(e) => e.currentTarget.style.color = colors.text.tertiary}
           >
             <X className="h-5 w-5" />
           </button>
@@ -88,7 +93,7 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Naam *
             </label>
             <input
@@ -98,12 +103,18 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               E-mail
             </label>
             <input
@@ -112,12 +123,18 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               name="email"
               value={formData.email || ''}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="phone" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Telefoon
             </label>
             <input
@@ -127,12 +144,19 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               value={formData.phone || ''}
               onChange={handleChange}
               placeholder="+31 6 12345678"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus,
+                ['::placeholder' as any]: { color: colors.text.placeholder }
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="company" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Bedrijf
             </label>
             <input
@@ -141,12 +165,18 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               name="company"
               value={formData.company || ''}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="source" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="source" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Bron
             </label>
             <select
@@ -154,7 +184,13 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               name="source"
               value={formData.source || 'manual'}
               onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
             >
               <option value="manual">Handmatig</option>
               <option value="website">Website</option>
@@ -167,11 +203,11 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
           </div>
 
           <div>
-            <label htmlFor="value" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="value" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Geschatte waarde
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: colors.text.tertiary }}>€</span>
               <input
                 type="number"
                 id="value"
@@ -181,13 +217,20 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
                 value={formData.value || ''}
                 onChange={handleChange}
                 placeholder="0.00"
-                className="w-full rounded-md border border-gray-300 pl-8 pr-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md pl-8 pr-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+                style={{
+                  backgroundColor: colors.background.input,
+                  border: `1px solid ${colors.border.input}`,
+                  color: colors.text.primary,
+                  ['--tw-ring-color' as any]: colors.border.focus,
+                  ['::placeholder' as any]: { color: colors.text.placeholder }
+                }}
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="tags" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Tags (gescheiden door komma's)
             </label>
             <input
@@ -196,12 +239,19 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="airco, installatie, amsterdam"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus,
+                ['::placeholder' as any]: { color: colors.text.placeholder }
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="notes" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Notities
             </label>
             <textarea
@@ -210,13 +260,19 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
               rows={3}
               value={formData.notes || ''}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 transition-colors"
+              style={{
+                backgroundColor: colors.background.input,
+                border: `1px solid ${colors.border.input}`,
+                color: colors.text.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-3">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="rounded-md p-3" style={{ backgroundColor: colors.status.error + '20' }}>
+              <p className="text-sm" style={{ color: colors.status.error }}>{error}</p>
             </div>
           )}
 
@@ -224,14 +280,28 @@ export default function LeadForm({ tenantId, onClose, onSuccess }: LeadFormProps
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
+              style={{ 
+                border: `1px solid ${colors.border.primary}`,
+                color: colors.text.primary,
+                backgroundColor: colors.background.elevated,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.interactive.secondary}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.background.elevated}
             >
               Annuleren
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ 
+                backgroundColor: colors.interactive.primary,
+                ['--tw-ring-color' as any]: colors.border.focus
+              }}
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = colors.interactive.primaryHover)}
+              onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = colors.interactive.primary)}
             >
               {loading ? 'Bezig...' : 'Lead Toevoegen'}
             </button>
