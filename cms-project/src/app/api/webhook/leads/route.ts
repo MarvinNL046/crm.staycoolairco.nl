@@ -49,10 +49,8 @@ function transformToLead(payload: WebhookPayload, tenantId: string) {
     company: payload.company || companyFromEmail,
     source: payload.source || 'WEBHOOK',
     status: 'new',
-    notes: `Auto-imported from webhook\n\nMessage: ${payload.message || 'No message'}\nSource: ${payload.source || 'unknown'}\nReceived: ${new Date().toISOString()}`,
-    tags: payload.source ? [payload.source] : ['webhook'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    notes: payload.message ? `Message: ${payload.message}\n\nSource: ${payload.source || 'webhook'}\nReceived: ${new Date().toISOString()}` : null,
+    tags: payload.source ? [payload.source] : ['webhook']
   }
 }
 
