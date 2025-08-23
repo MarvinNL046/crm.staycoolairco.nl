@@ -12,7 +12,7 @@ import {
   Building2,
   X
 } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface ChecklistItem {
   id: string
