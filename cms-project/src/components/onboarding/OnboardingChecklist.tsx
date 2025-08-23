@@ -62,7 +62,7 @@ export function OnboardingChecklist() {
         description: 'Begin met het toevoegen van potentiële klanten',
         icon: <Users className="w-5 h-5" />,
         completed: (leads.data?.length || 0) > 0,
-        action: () => window.location.href = '/dashboard/leads'
+        action: () => window.location.href = '/crm/leads'
       },
       {
         id: 'add-contact',
@@ -70,7 +70,7 @@ export function OnboardingChecklist() {
         description: 'Voeg contactpersonen toe aan uw CRM',
         icon: <Building2 className="w-5 h-5" />,
         completed: (contacts.data?.length || 0) > 0,
-        action: () => window.location.href = '/dashboard/contacts'
+        action: () => window.location.href = '/crm/contacts'
       },
       {
         id: 'create-invoice',
@@ -78,7 +78,7 @@ export function OnboardingChecklist() {
         description: 'Test het facturatie systeem',
         icon: <FileText className="w-5 h-5" />,
         completed: (invoices.data?.length || 0) > 0,
-        action: () => window.location.href = '/invoicing/new'
+        action: () => window.location.href = '/crm/invoices/new'
       },
       {
         id: 'setup-email',
@@ -86,7 +86,7 @@ export function OnboardingChecklist() {
         description: 'Personaliseer uw email communicatie',
         icon: <Mail className="w-5 h-5" />,
         completed: (emailTemplates.data?.length || 0) > 4,
-        action: () => window.location.href = '/dashboard/settings'
+        action: () => window.location.href = '/crm/settings'
       },
       {
         id: 'company-settings',
@@ -94,7 +94,7 @@ export function OnboardingChecklist() {
         description: 'Complete uw bedrijfsprofiel',
         icon: <Settings className="w-5 h-5" />,
         completed: false, // TODO: Check company settings
-        action: () => window.location.href = '/dashboard/settings'
+        action: () => window.location.href = '/crm/settings'
       }
     ])
   }
