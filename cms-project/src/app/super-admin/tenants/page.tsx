@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Building2, Users, TrendingUp, Calendar, ExternalLink, Settings } from 'lucide-react'
+import { Building2, Users, TrendingUp, Calendar, ExternalLink, Settings, Eye } from 'lucide-react'
+import { ImpersonateButton } from '@/components/super-admin/ImpersonateButton'
 
 export default async function TenantsPage() {
   const cookieStore = await cookies()
@@ -193,6 +194,10 @@ export default async function TenantsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
+                  <ImpersonateButton 
+                    tenantId={tenant.id}
+                    tenantName={tenant.name}
+                  />
                   <Button variant="outline" size="sm" className="flex-1">
                     <Settings className="mr-2 h-3 w-3" />
                     Beheren

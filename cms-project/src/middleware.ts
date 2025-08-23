@@ -67,6 +67,22 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Handle tenant impersonation for super admins
+  if (isProtectedRoute && user && !isSuperAdminRoute) {
+    // Check if super admin is impersonating a tenant
+    const impersonatingTenantId = request.cookies.get('impersonating_tenant_id')?.value
+    const originalSuperAdminId = request.cookies.get('original_super_admin_id')?.value
+    
+    if (impersonatingTenantId && originalSuperAdminId) {
+      // Super admin is impersonating, add tenant context to response headers
+      supabaseResponse.headers.set('x-impersonating-tenant-id', impersonatingTenantId)
+      supabaseResponse.headers.set('x-original-super-admin-id', originalSuperAdminId)
+      
+      // Allow access to CRM routes while impersonating
+      return supabaseResponse
+    }
+  }
+
   // Redirect to login if accessing protected route without authentication
   if ((isProtectedRoute || isSuperAdminRoute) && !user) {
     const redirectUrl = new URL('/auth/login', request.url)

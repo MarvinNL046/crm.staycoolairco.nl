@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SuperAdminSidebar } from '@/components/super-admin/super-admin-sidebar'
 import { ThemeProvider } from '@/components/theme/theme-provider'
+import { getImpersonationContext } from "@/lib/supabase/impersonation"
+import { ImpersonationBanner } from "@/components/super-admin/ImpersonationBanner"
 
 export default async function SuperAdminLayout({
   children,
@@ -58,6 +60,19 @@ export default async function SuperAdminLayout({
     .eq('id', user.id)
     .single()
 
+  // Check for impersonation
+  const { isImpersonating, tenantId } = await getImpersonationContext()
+  
+  let tenantName = null
+  if (isImpersonating && tenantId) {
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('name')
+      .eq('id', tenantId)
+      .single()
+    tenantName = tenant?.name
+  }
+
   return (
     <ThemeProvider
       attribute="class"
@@ -68,7 +83,13 @@ export default async function SuperAdminLayout({
       <div className="min-h-screen bg-gray-50 flex">
         <SuperAdminSidebar user={{ ...user, ...profile }} />
         <main className="flex-1 overflow-auto">
-          <div className="p-6">
+          <div className="p-6 space-y-6">
+            {isImpersonating && tenantName && (
+              <ImpersonationBanner 
+                tenantName={tenantName} 
+                tenantId={tenantId!} 
+              />
+            )}
             {children}
           </div>
         </main>

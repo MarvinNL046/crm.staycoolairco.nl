@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "@/components/settings/SettingsClient";
+import { getEffectiveTenantId } from "@/lib/supabase/impersonation";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -13,14 +14,10 @@ export default async function SettingsPage() {
     redirect("/auth/login");
   }
 
-  // Get user profile to get tenant_id
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  // Get effective tenant ID (handles impersonation)
+  const tenantId = await getEffectiveTenantId();
 
-  if (!profile?.tenant_id) {
+  if (!tenantId) {
     redirect("/crm");
   }
 
@@ -39,7 +36,7 @@ export default async function SettingsPage() {
       subscription_ends_at,
       updated_at
     `)
-    .eq("id", profile.tenant_id)
+    .eq("id", tenantId)
     .single();
 
   if (!tenant) {
@@ -54,11 +51,11 @@ export default async function SettingsPage() {
     supabase
       .from("profiles")
       .select("id", { count: "exact", head: true })
-      .eq("tenant_id", profile.tenant_id),
+      .eq("tenant_id", tenantId),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
-      .eq("tenant_id", profile.tenant_id)
+      .eq("tenant_id", tenantId)
   ]);
 
   return (
