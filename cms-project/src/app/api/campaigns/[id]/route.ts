@@ -7,13 +7,14 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { data: campaign, error } = await supabase
       .from('campaigns')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error || !campaign) {
@@ -68,7 +69,7 @@ export async function PUT(
         ...body,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -100,7 +101,7 @@ export async function DELETE(
     const { data: campaign } = await supabase
       .from('campaigns')
       .select('status')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!campaign) {
@@ -120,7 +121,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('campaigns')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       console.error('Error deleting campaign:', error)
