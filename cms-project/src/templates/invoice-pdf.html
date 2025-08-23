@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{type}} {{invoiceNumber}}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 40px;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 20px;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+        
+        .company-details {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .invoice-info {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+        
+        .invoice-number {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-date {
+            color: #666;
+        }
+        
+        .customer-section {
+            margin: 40px 0;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .customer-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 40px 0;
+        }
+        
+        .items-table th {
+            background: #0066cc;
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .items-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .items-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .totals-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .totals-table {
+            width: 300px;
+            border-collapse: collapse;
+        }
+        
+        .totals-table td {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .totals-table .total-row {
+            font-weight: bold;
+            font-size: 18px;
+            background: #0066cc;
+            color: white;
+        }
+        
+        .notes-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .payment-info {
+            margin-top: 40px;
+            padding: 20px;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+        
+        .payment-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            font-size: 12px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-draft { background: #f1f3f4; color: #5f6368; }
+        .status-sent { background: #e3f2fd; color: #1976d2; }
+        .status-paid { background: #e8f5e8; color: #2e7d32; }
+        .status-overdue { background: #ffebee; color: #d32f2f; }
+        .status-cancelled { background: #f1f3f4; color: #5f6368; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <div class="company-name">StayCool Airconditioning</div>
+            <div class="company-details">
+                Koelenstraat 123<br>
+                1234 AB Amsterdam<br>
+                Nederland<br><br>
+                Tel: +31 20 123 4567<br>
+                Email: info@staycoolairco.nl<br>
+                BTW: NL123456789B01
+            </div>
+        </div>
+        <div class="invoice-info">
+            <div class="invoice-title">{{typeLabel}}</div>
+            <div class="invoice-number">{{invoiceNumber}}</div>
+            <div class="invoice-date">Datum: {{issueDate}}</div>
+            {{#if dueDate}}
+            <div class="invoice-date">Vervaldatum: {{dueDate}}</div>
+            {{/if}}
+            {{#if quoteValidUntil}}
+            <div class="invoice-date">Geldig tot: {{quoteValidUntil}}</div>
+            {{/if}}
+            <div style="margin-top: 15px;">
+                <span class="status-badge status-{{status}}">{{statusLabel}}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="customer-section">
+        <div class="section-title">Factuuradres</div>
+        <div class="customer-info">
+            <strong>{{customerName}}</strong><br>
+            {{#if customerCompany}}{{customerCompany}}<br>{{/if}}
+            {{#if billingAddressLine1}}{{billingAddressLine1}}<br>{{/if}}
+            {{#if billingAddressLine2}}{{billingAddressLine2}}<br>{{/if}}
+            {{#if billingCity}}{{billingPostalCode}} {{billingCity}}<br>{{/if}}
+            {{#if billingCountry}}{{billingCountry}}<br>{{/if}}
+            <br>
+            {{#if customerEmail}}Email: {{customerEmail}}<br>{{/if}}
+            {{#if customerPhone}}Tel: {{customerPhone}}{{/if}}
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Omschrijving</th>
+                <th class="text-center" style="width: 80px;">Aantal</th>
+                <th class="text-right" style="width: 100px;">Prijs p/st</th>
+                <th class="text-right" style="width: 80px;">BTW%</th>
+                <th class="text-right" style="width: 120px;">Totaal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each items}}
+            <tr>
+                <td>
+                    <strong>{{name}}</strong>
+                    {{#if description}}<br><small style="color: #666;">{{description}}</small>{{/if}}
+                </td>
+                <td class="text-center">{{quantity}}</td>
+                <td class="text-right">€ {{unitPrice}}</td>
+                <td class="text-right">{{taxRate}}%</td>
+                <td class="text-right">€ {{total}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <table class="totals-table">
+            <tr>
+                <td>Subtotaal:</td>
+                <td class="text-right">€ {{subtotal}}</td>
+            </tr>
+            {{#if discountAmount}}
+            <tr>
+                <td>Korting:</td>
+                <td class="text-right">- € {{discountAmount}}</td>
+            </tr>
+            {{/if}}
+            <tr>
+                <td>BTW ({{taxRate}}%):</td>
+                <td class="text-right">€ {{taxAmount}}</td>
+            </tr>
+            <tr class="total-row">
+                <td>Totaal:</td>
+                <td class="text-right">€ {{totalAmount}}</td>
+            </tr>
+        </table>
+    </div>
+
+    {{#if notes}}
+    <div class="notes-section">
+        <div class="section-title">Opmerkingen</div>
+        {{notes}}
+    </div>
+    {{/if}}
+
+    <div class="payment-info">
+        <div class="payment-title">Betalingsgegevens</div>
+        <strong>IBAN:</strong> NL91 ABNA 0417 1643 00<br>
+        <strong>BIC:</strong> ABNANL2A<br>
+        <strong>Ten name van:</strong> StayCool Airconditioning B.V.<br>
+        {{#if paymentTerms}}<strong>Betalingstermijn:</strong> {{paymentTerms}}<br>{{/if}}
+        <br>
+        <em>Gelieve het factuurnummer {{invoiceNumber}} te vermelden bij de betaling.</em>
+    </div>
+
+    <div class="footer">
+        <p>StayCool Airconditioning B.V. | KvK: 12345678 | BTW: NL123456789B01</p>
+        <p>Koelenstraat 123, 1234 AB Amsterdam | Tel: +31 20 123 4567 | Email: info@staycoolairco.nl</p>
+    </div>
+</body>
+</html>

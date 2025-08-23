@@ -1,0 +1,361 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for CRM authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(SALES_REP)
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // CRM Relations
+  assignedLeads    Lead[]      @relation("AssignedUser")
+  assignedDeals    Deal[]      @relation("AssignedUser")
+  createdLeads     Lead[]      @relation("CreatedByUser")
+  createdDeals     Deal[]      @relation("CreatedByUser")
+  createdContacts  Contact[]   @relation("CreatedByUser")
+  createdInvoices  Invoice[]   @relation("CreatedByUser")
+  activities       Activity[]
+  
+  @@map("users")
+}
+
+// User roles for CRM
+enum UserRole {
+  ADMIN
+  SALES_MANAGER
+  SALES_REP
+  SUPPORT
+}
+
+// Lead model - prospects/potential customers
+model Lead {
+  id          String     @id @default(cuid())
+  companyName String
+  contactName String
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  city        String?
+  postalCode  String?
+  country     String?    @default("Netherlands")
+  
+  // Lead specific fields
+  source      LeadSource
+  status      LeadStatus @default(NEW)
+  priority    Priority   @default(MEDIUM)
+  value       Float?     // Estimated deal value
+  description String?
+  notes       String?
+  
+  // Assignment
+  assignedTo   User?     @relation("AssignedUser", fields: [assignedToId], references: [id])
+  assignedToId String?
+  createdBy    User      @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById  String
+  
+  // Timestamps
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relations
+  activities   Activity[]
+  convertedDeal Deal?     @relation("ConvertedFromLead")
+  
+  @@map("leads")
+}
+
+// Lead source tracking
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  COLD_CALL
+  SOCIAL_MEDIA
+  EMAIL_CAMPAIGN
+  TRADE_SHOW
+  PARTNER
+  OTHER
+}
+
+// Lead status pipeline
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+  NURTURING
+}
+
+// Priority levels
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Contact model - established customers/contacts
+model Contact {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?  @unique
+  phone       String?
+  mobile      String?
+  jobTitle    String?
+  department  String?
+  
+  // Company relation
+  company     Company? @relation(fields: [companyId], references: [id])
+  companyId   String?
+  
+  // Contact details
+  address     String?
+  city        String?
+  postalCode  String?
+  country     String?  @default("Netherlands")
+  notes       String?
+  
+  // Metadata
+  createdBy   User     @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  deals       Deal[]
+  invoices    Invoice[]
+  activities  Activity[]
+  
+  @@map("contacts")
+}
+
+// Company model
+model Company {
+  id          String    @id @default(cuid())
+  name        String
+  website     String?
+  industry    String?
+  size        CompanySize?
+  
+  // Address
+  address     String?
+  city        String?
+  postalCode  String?
+  country     String?   @default("Netherlands")
+  
+  // Company details
+  vatNumber   String?
+  description String?
+  notes       String?
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  contacts    Contact[]
+  deals       Deal[]
+  invoices    Invoice[]
+  
+  @@map("companies")
+}
+
+// Company size classification
+enum CompanySize {
+  STARTUP
+  SMALL      // 1-10 employees
+  MEDIUM     // 11-50 employees
+  LARGE      // 51-200 employees
+  ENTERPRISE // 200+ employees
+}
+
+// Deal model - sales opportunities
+model Deal {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  value        Float
+  currency     String     @default("EUR")
+  
+  // Deal pipeline
+  stage        DealStage  @default(QUALIFIED)
+  probability  Int        @default(50) // 0-100%
+  priority     Priority   @default(MEDIUM)
+  
+  // Dates
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  
+  // Assignment
+  assignedTo   User       @relation("AssignedUser", fields: [assignedToId], references: [id])
+  assignedToId String
+  createdBy    User       @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById  String
+  
+  // Relations
+  contact      Contact    @relation(fields: [contactId], references: [id])
+  contactId    String
+  company      Company?   @relation(fields: [companyId], references: [id])
+  companyId    String?
+  
+  // Lead conversion
+  convertedFromLead Lead? @relation("ConvertedFromLead", fields: [leadId], references: [id])
+  leadId       String?   @unique
+  
+  // Generated documents
+  invoices     Invoice[]
+  
+  // Activity tracking
+  activities   Activity[]
+  
+  // Timestamps
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  @@map("deals")
+}
+
+// Deal stages in sales pipeline
+enum DealStage {
+  QUALIFIED
+  NEEDS_ANALYSIS
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+// Invoice model
+model Invoice {
+  id           String        @id @default(cuid())
+  invoiceNumber String       @unique
+  title        String
+  description  String?
+  
+  // Financial
+  subtotal     Float
+  taxRate      Float         @default(21.0) // Dutch VAT rate
+  taxAmount    Float
+  total        Float
+  currency     String        @default("EUR")
+  
+  // Status
+  status       InvoiceStatus @default(DRAFT)
+  type         InvoiceType   @default(INVOICE)
+  
+  // Dates
+  issueDate    DateTime      @default(now())
+  dueDate      DateTime
+  paidDate     DateTime?
+  
+  // Relations
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  contactId    String
+  company      Company?      @relation(fields: [companyId], references: [id])
+  companyId    String?
+  deal         Deal?         @relation(fields: [dealId], references: [id])
+  dealId       String?
+  
+  // Items
+  items        InvoiceItem[]
+  
+  // Metadata
+  createdBy    User          @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  @@map("invoices")
+}
+
+// Invoice status tracking
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// Invoice types
+enum InvoiceType {
+  QUOTE
+  INVOICE
+  CREDIT_NOTE
+}
+
+// Invoice line items
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float
+  total       Float
+  
+  // Relations
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+  
+  @@map("invoice_items")
+}
+
+// Activity log for tracking interactions
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  title       String
+  description String?
+  notes       String?
+  
+  // Relations
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  leadId      String?
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  contactId   String?
+  deal        Deal?        @relation(fields: [dealId], references: [id])
+  dealId      String?
+  
+  // Timestamps
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  
+  @@map("activities")
+}
+
+// Activity types for tracking
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  TASK
+  QUOTE_SENT
+  PROPOSAL_SENT
+  CONTRACT_SIGNED
+  PAYMENT_RECEIVED
+}
