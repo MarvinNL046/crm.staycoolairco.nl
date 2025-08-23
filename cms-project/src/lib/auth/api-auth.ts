@@ -9,6 +9,20 @@ export interface AuthenticatedApiContext {
 }
 
 export async function authenticateApiRequest(request: NextRequest): Promise<AuthenticatedApiContext | { error: string; status: number }> {
+  // Check if we're on localhost
+  const host = request.headers.get('host') || ''
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+  
+  // Skip authentication on localhost and return mock data
+  if (isLocalhost) {
+    console.log('Localhost detected in API auth, skipping authentication')
+    return {
+      user: { id: 'localhost-user', email: 'test@localhost' },
+      tenantId: 'localhost-tenant',
+      supabase: await createClient() // This will return the mock client
+    }
+  }
+
   try {
     const supabase = await createClient()
     

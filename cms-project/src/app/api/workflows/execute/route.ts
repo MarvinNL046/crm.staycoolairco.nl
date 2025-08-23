@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     
     // Process each trigger
     const results = await Promise.allSettled(
-      triggers.map(async (trigger) => {
+      triggers.map(async (trigger: any) => {
         // Mark als processing
         await supabase
           .from('workflow_trigger_queue')

@@ -3,6 +3,40 @@ import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/a
 
 // GET /api/leads - Get all leads
 export async function GET(request: NextRequest) {
+  // Check if we're on localhost for development
+  const host = request.headers.get('host') || ''
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+  
+  if (isLocalhost) {
+    // Return mock data for localhost
+    return NextResponse.json([
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        phone: '+31612345678',
+        company: 'ABC Company',
+        status: 'new',
+        source: 'website',
+        notes: 'Interested in our services',
+        created_at: new Date().toISOString(),
+        tenant_id: 'localhost-tenant'
+      },
+      {
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+31698765432',
+        company: 'XYZ Corp',
+        status: 'contacted',
+        source: 'referral',
+        notes: 'Follow up next week',
+        created_at: new Date().toISOString(),
+        tenant_id: 'localhost-tenant'
+      }
+    ])
+  }
+
   // SECURITY: Authenticate user and get tenant
   const authResult = await authenticateApiRequest(request);
   if ('error' in authResult) {

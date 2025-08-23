@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const headerEntries = Object.fromEntries(headersList.entries());
     
     // Queue workflow executions
-    const queuePromises = workflows.map(workflow => 
+    const queuePromises = workflows.map((workflow: any) => 
       supabase
         .from('workflow_trigger_queue')
         .insert({
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'ready',
       webhook_key: key,
-      workflows: workflows.map(w => w.name),
+      workflows: workflows.map((w: any) => w.name),
       message: 'This webhook is configured and ready to receive data'
     });
   }

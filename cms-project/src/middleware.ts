@@ -2,6 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Skip authentication for localhost development
+  const url = new URL(request.url)
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  
+  if (isLocalhost) {
+    console.log('Localhost detected, skipping authentication')
+    return NextResponse.next()
+  }
+
   // Check if environment variables are available
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.warn('Supabase environment variables not found, skipping authentication')

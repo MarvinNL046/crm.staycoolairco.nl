@@ -22,6 +22,11 @@ interface SidebarStats {
     won: number
     badge: BadgeData | null
   }
+  quotes: {
+    total: number
+    pending: number
+    badge: BadgeData | null
+  }
   invoices: {
     total: number
     urgent: number

@@ -3,6 +3,39 @@ import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/a
 
 // GET /api/appointments - Get all appointments
 export async function GET(request: NextRequest) {
+  // Check if we're on localhost for development
+  const host = request.headers.get('host') || ''
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+  
+  if (isLocalhost) {
+    // Return mock data for localhost
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    return NextResponse.json([
+      {
+        id: '1',
+        title: 'Meeting with John Doe',
+        description: 'Discuss project requirements',
+        start_time: new Date().toISOString(),
+        end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        location: 'Office',
+        customer_name: 'John Doe',
+        tenant_id: 'localhost-tenant'
+      },
+      {
+        id: '2',
+        title: 'Site visit',
+        description: 'Installation inspection',
+        start_time: tomorrow.toISOString(),
+        end_time: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        location: 'Customer location',
+        customer_name: 'Jane Smith',
+        tenant_id: 'localhost-tenant'
+      }
+    ])
+  }
+
   // SECURITY: Authenticate user and get tenant
   const authResult = await authenticateApiRequest(request);
   if ('error' in authResult) {

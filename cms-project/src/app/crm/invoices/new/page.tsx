@@ -46,7 +46,7 @@ interface InvoiceItem {
 }
 
 interface Customer {
-  id: number
+  id: number | string
   name: string
   company: string
   email: string
@@ -55,9 +55,9 @@ interface Customer {
   city: string
   postalCode: string
   country: string
-  totalValue: number
-  lastInvoice: string
-  relationship: 'hot' | 'warm' | 'cold'
+  totalValue?: number
+  lastInvoice?: string
+  relationship?: 'hot' | 'warm' | 'cold'
 }
 
 interface InvoiceForm {
@@ -395,12 +395,12 @@ export default function NewInvoicePage() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Customer Value</span>
-                    <span className="font-medium">{formatCurrency(selectedCustomer.totalValue)}</span>
+                    <span className="font-medium">{formatCurrency(selectedCustomer.totalValue || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Last Invoice</span>
                     <span className="text-muted-foreground">
-                      {new Intl.DateTimeFormat('nl-NL').format(new Date(selectedCustomer.lastInvoice))}
+                      {selectedCustomer.lastInvoice ? new Intl.DateTimeFormat('nl-NL').format(new Date(selectedCustomer.lastInvoice)) : 'No previous invoices'}
                     </span>
                   </div>
                 </div>

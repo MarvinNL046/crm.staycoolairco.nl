@@ -3,6 +3,44 @@ import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/a
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if we're on localhost for development
+    const host = request.headers.get('host') || ''
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+    
+    if (isLocalhost) {
+      // Return mock data for localhost in the expected format
+      return NextResponse.json({
+        leads: {
+          total: 12,
+          new: 3,
+          badge: { count: 3, variant: 'default' as const }
+        },
+        contacts: {
+          total: 15,
+          badge: null
+        },
+        deals: {
+          total: 5,
+          won: 2,
+          badge: { count: 2, variant: 'secondary' as const }
+        },
+        quotes: {
+          total: 6,
+          pending: 3,
+          badge: { count: 3, variant: 'default' as const }
+        },
+        invoices: {
+          total: 8,
+          urgent: 1,
+          badge: { count: 1, variant: 'destructive' as const }
+        },
+        companies: {
+          total: 10,
+          badge: null
+        }
+      })
+    }
+
     // SECURITY: Authenticate user and get tenant
     const authResult = await authenticateApiRequest(request);
     if ('error' in authResult) {

@@ -81,15 +81,21 @@ const menuItemsStructure = [
     key: "deals",
   },
   {
+    title: "Offertes",
+    url: "/crm/quotes",
+    icon: FileText,
+    key: "quotes",
+  },
+  {
     title: "Facturen",
     url: "/crm/invoices",
-    icon: FileText,
+    icon: Receipt,
     key: "invoices",
   },
   {
     title: "Uitgaven",
     url: "/crm/expenses",
-    icon: Receipt,
+    icon: DollarSign,
     key: "expenses",
   },
 ]
