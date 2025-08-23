@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 import { 
   Copy,
   Eye,
@@ -152,6 +153,7 @@ export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsC
   const [showSecret, setShowSecret] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
   
   // Email Templates State
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
@@ -288,8 +290,21 @@ export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsC
     }, 1000);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = (text: string, label?: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Gekopieerd!",
+        description: label ? `${label} is gekopieerd naar het klembord.` : "Tekst is gekopieerd naar het klembord.",
+        duration: 2000,
+      });
+    }).catch(() => {
+      toast({
+        title: "Kopiëren mislukt",
+        description: "Kon niet kopiëren naar het klembord.",
+        variant: "destructive",
+        duration: 2000,
+      });
+    });
   };
 
   const testWebhook = async () => {
@@ -873,7 +888,7 @@ curl -X POST "$WEBHOOK_URL" \\
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => copyToClipboard(webhookUrl)}
+                    onClick={() => copyToClipboard(webhookUrl, "Webhook URL")}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -907,7 +922,7 @@ curl -X POST "$WEBHOOK_URL" \\
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => copyToClipboard(webhookSecret)}
+                    onClick={() => copyToClipboard(webhookSecret, "Webhook Secret")}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -982,7 +997,7 @@ curl -X POST "$WEBHOOK_URL" \\
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => copyToClipboard(htmlFormExample)}
+                      onClick={() => copyToClipboard(htmlFormExample, "PHP voorbeeld")}
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Kopiëren
@@ -1004,7 +1019,7 @@ curl -X POST "$WEBHOOK_URL" \\
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => copyToClipboard(jsExample)}
+                      onClick={() => copyToClipboard(jsExample, "Node.js voorbeeld")}
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Kopiëren
@@ -1026,7 +1041,7 @@ curl -X POST "$WEBHOOK_URL" \\
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => copyToClipboard(curlExample)}
+                      onClick={() => copyToClipboard(curlExample, "cURL voorbeeld")}
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Kopiëren
