@@ -1,6 +1,8 @@
 import { Suspense } from 'react'
 import { SignInForm } from '@/components/auth/SignInForm'
 
+export const dynamic = 'force-dynamic'
+
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">

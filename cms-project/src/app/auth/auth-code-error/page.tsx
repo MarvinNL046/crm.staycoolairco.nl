@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default function AuthCodeErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">

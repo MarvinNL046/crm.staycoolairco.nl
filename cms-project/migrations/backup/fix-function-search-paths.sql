@@ -1,61 +1,110 @@
--- Fix search_path for get_user_tenant_id function
-DROP FUNCTION IF EXISTS public.get_user_tenant_id(uuid);
+-- Fix security warnings about mutable search_path in functions
+-- This prevents potential security issues from schema manipulation
 
-CREATE OR REPLACE FUNCTION public.get_user_tenant_id(user_id uuid)
-RETURNS uuid
-LANGUAGE plpgsql
+BEGIN;
+
+-- ========================================
+-- 1. Fix get_user_tenant_id function
+-- ========================================
+CREATE OR REPLACE FUNCTION public.get_user_tenant_id()
+RETURNS uuid 
+LANGUAGE plpgsql 
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth
 AS $$
-DECLARE
-    tenant_id uuid;
 BEGIN
-    -- Get tenant_id from profiles table
-    SELECT p.tenant_id INTO tenant_id
-    FROM public.profiles p
-    WHERE p.id = user_id;
-    
-    -- Return the tenant_id (will be NULL if user not found)
-    RETURN tenant_id;
+    RETURN (
+        SELECT tenant_id 
+        FROM public.tenant_users 
+        WHERE user_id = auth.uid() 
+        LIMIT 1
+    );
 END;
 $$;
 
--- Fix search_path for update_leads_search_fts function
-DROP FUNCTION IF EXISTS public.update_leads_search_fts();
-
-CREATE OR REPLACE FUNCTION public.update_leads_search_fts()
-RETURNS trigger
-LANGUAGE plpgsql
+-- ========================================
+-- 2. Fix update_profile_on_auth_change function
+-- ========================================
+CREATE OR REPLACE FUNCTION public.update_profile_on_auth_change()
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    -- Update the search_fts column with concatenated searchable fields
+    -- Simply update the profile's last_sign_in_at and last_active_at to NOW()
+    -- whenever the auth.users record is updated (which happens on login)
+    UPDATE public.profiles 
+    SET 
+        last_sign_in_at = NOW(),
+        last_active_at = NOW(),
+        updated_at = NOW()
+    WHERE id = NEW.id;
+    
+    RETURN NEW;
+END;
+$$;
+
+-- ========================================
+-- 3. Fix update_leads_search_fts function
+-- ========================================
+CREATE OR REPLACE FUNCTION public.update_leads_search_fts()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+    -- Update the search_fts column with a tsvector combining all searchable fields
     NEW.search_fts := to_tsvector('english',
         COALESCE(NEW.name, '') || ' ' ||
         COALESCE(NEW.email, '') || ' ' ||
         COALESCE(NEW.phone, '') || ' ' ||
         COALESCE(NEW.company, '') || ' ' ||
-        COALESCE(NEW.notes, '') || ' ' ||
-        COALESCE(NEW.source, '') || ' ' ||
-        COALESCE(NEW.status, '')
+        COALESCE(NEW.city, '') || ' ' ||
+        COALESCE(NEW.description, '') || ' ' ||
+        COALESCE(NEW.status, '') || ' ' ||
+        COALESCE(NEW.source, '')
     );
     RETURN NEW;
 END;
 $$;
 
--- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION public.get_user_tenant_id(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_user_tenant_id(uuid) TO service_role;
-
--- Note: Trigger functions typically don't need explicit grants as they're called by the system
-
--- Verify the functions have been updated
+-- ========================================
+-- 4. Check for any other functions without search_path
+-- ========================================
 SELECT 
-    n.nspname as schema,
+    'VERIFICATION: Functions without search_path' as check_type,
+    n.nspname as schema_name,
     p.proname as function_name,
-    pg_get_functiondef(p.oid) as function_definition
+    pg_get_function_arguments(p.oid) as arguments,
+    p.prosecdef as is_security_definer,
+    CASE 
+        WHEN p.proconfig IS NULL OR NOT (p.proconfig::text[] @> ARRAY['search_path=public'] OR p.proconfig::text[] LIKE '%search_path%')
+        THEN '⚠️ No search_path set'
+        ELSE '✅ Has search_path'
+    END as search_path_status
 FROM pg_proc p
 JOIN pg_namespace n ON p.pronamespace = n.oid
-WHERE n.nspname = 'public' 
-AND p.proname IN ('get_user_tenant_id', 'update_leads_search_fts');
+WHERE n.nspname = 'public'
+    AND p.prokind = 'f'
+    AND (p.proconfig IS NULL OR NOT (p.proconfig::text[] @> ARRAY['search_path=public'] OR p.proconfig::text[] LIKE '%search_path%'))
+ORDER BY p.proname;
+
+COMMIT;
+
+-- ========================================
+-- 5. Final security verification
+-- ========================================
+SELECT 
+    'FINAL STATUS' as check,
+    COUNT(*) FILTER (WHERE proconfig IS NULL OR NOT (proconfig::text[] @> ARRAY['search_path=public'] OR proconfig::text[] LIKE '%search_path%')) as functions_without_path,
+    COUNT(*) FILTER (WHERE proconfig IS NOT NULL AND (proconfig::text[] @> ARRAY['search_path=public'] OR proconfig::text[] LIKE '%search_path%')) as functions_with_path,
+    CASE 
+        WHEN COUNT(*) FILTER (WHERE proconfig IS NULL OR NOT (proconfig::text[] @> ARRAY['search_path=public'] OR proconfig::text[] LIKE '%search_path%')) = 0
+        THEN '✅ All functions have search_path - SECURE'
+        ELSE '⚠️ ' || COUNT(*) FILTER (WHERE proconfig IS NULL OR NOT (proconfig::text[] @> ARRAY['search_path=public'] OR proconfig::text[] LIKE '%search_path%')) || ' functions still need search_path'
+    END as security_status
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = 'public'
+    AND p.prokind = 'f';

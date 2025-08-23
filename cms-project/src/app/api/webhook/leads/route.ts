@@ -27,12 +27,6 @@ interface WebhookPayload {
   [key: string]: any
 }
 
-// Create Supabase client with fallback to anon key
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 // Transform webhook data to lead format
 function transformToLead(payload: WebhookPayload, tenantId: string) {
   // Extract company name from email domain if not provided
@@ -59,6 +53,19 @@ export async function POST(request: NextRequest) {
   let tenantId: string | null = null
   let webhookLogger: WebhookLogger | null = null
   let clientIp: string = 'unknown'
+
+  // Initialize Supabase client
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { error: 'Missing Supabase configuration' },
+      { status: 500 }
+    )
+  }
+  
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey)
 
   try {
     // Get client IP and headers

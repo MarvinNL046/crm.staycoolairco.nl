@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 // GET /api/appointments - Get all appointments
 export async function GET(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: 'Missing environment variables' }, { status: 500 });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
   try {
     const searchParams = request.nextUrl.searchParams;
     const tenantId = searchParams.get('tenant_id');
@@ -52,6 +57,15 @@ export async function GET(request: NextRequest) {
 
 // POST /api/appointments - Create new appointment
 export async function POST(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: 'Missing environment variables' }, { status: 500 });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
   try {
     const body = await request.json();
     const { 

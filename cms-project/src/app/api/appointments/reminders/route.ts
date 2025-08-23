@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // GET /api/appointments/reminders - Process and send appointment reminders
 export async function GET(request: NextRequest) {
+  // Initialize clients inside the function to avoid build-time errors
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { error: 'Missing environment variables' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     // Check for authorization (only allow from cron job or admin)
     const authHeader = request.headers.get('authorization');
@@ -196,6 +204,20 @@ Web: www.staycoolairco.nl
 
 // POST /api/appointments/reminders/test - Test reminder for specific appointment
 export async function POST(request: NextRequest) {
+  // Initialize clients inside the function to avoid build-time errors
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { error: 'Missing environment variables' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  
   // SECURITY: Check authorization for test reminders
   const authHeader = request.headers.get('authorization');
   const isAuthorized = authHeader && (
