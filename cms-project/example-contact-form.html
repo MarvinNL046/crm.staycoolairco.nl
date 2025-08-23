@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Formulier - StayCool Airco</title>
+</head>
+<body>
+    <h1>Contact Formulier Voorbeeld</h1>
+    
+    <form id="contactForm">
+        <label for="name">Naam:*</label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="email">Email:*</label>
+        <input type="email" id="email" name="email" required>
+        
+        <label for="phone">Telefoon:</label>
+        <input type="tel" id="phone" name="phone">
+        
+        <label for="company">Bedrijf:</label>
+        <input type="text" id="company" name="company">
+        
+        <label for="message">Bericht:</label>
+        <textarea id="message" name="message"></textarea>
+        
+        <button type="submit">Verstuur</button>
+    </form>
+
+    <script>
+    // Webhook configuratie
+    const WEBHOOK_URL = 'https://crm.staycoolairco.nl/api/webhook/leads?tenant=80496bff-b559-4b80-9102-3a84afdaa616';
+    const WEBHOOK_SECRET = 'wh_secret_abc123xyz789';
+
+    // HMAC-SHA256 signature functie
+    async function generateSignature(payload, secret) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(payload));
+        const key = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+        );
+        const signature = await crypto.subtle.sign('HMAC', key, data);
+        const hashArray = Array.from(new Uint8Array(signature));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return 'sha256=' + hashHex;
+    }
+
+    // Form submit handler
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const payload = {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            phone: formData.get('phone') || undefined,
+            company: formData.get('company') || undefined,
+            message: formData.get('message') || undefined,
+            source: 'website_contact_form'
+        };
+        
+        // Verwijder undefined values
+        Object.keys(payload).forEach(key => 
+            payload[key] === undefined && delete payload[key]
+        );
+        
+        try {
+            // Genereer signature
+            const signature = await generateSignature(payload, WEBHOOK_SECRET);
+            
+            // Verstuur naar webhook
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Webhook-Signature': signature
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Bedankt! We nemen zo snel mogelijk contact met u op.');
+                e.target.reset();
+            } else {
+                alert('Er ging iets mis. Probeer het later opnieuw.');
+                console.error('Webhook error:', result);
+            }
+        } catch (error) {
+            alert('Er ging iets mis. Probeer het later opnieuw.');
+            console.error('Error:', error);
+        }
+    });
+    </script>
+</body>
+</html>

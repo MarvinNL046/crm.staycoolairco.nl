@@ -294,19 +294,24 @@ export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsC
 
   const testWebhook = async () => {
     try {
-      const response = await fetch('/api/webhook/leads', {
+      const testData = {
+        name: 'Test Contact',
+        email: 'test@example.com',
+        phone: '+31 6 1234 5678',
+        company: 'Test Company',
+        message: 'This is a test webhook submission',
+        source: 'webhook_test'
+      };
+
+      // For testing, we'll call the webhook directly with tenant parameter
+      const response = await fetch(`/api/webhook/leads?tenant=${tenant.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // In production, you would generate a proper signature
+          'X-Webhook-Test': 'true'
         },
-        body: JSON.stringify({
-          name: 'Test Contact',
-          email: 'test@example.com',
-          phone: '+31 6 1234 5678',
-          company: 'Test Company',
-          message: 'This is a test webhook submission',
-          source: 'webhook_test'
-        })
+        body: JSON.stringify(testData)
       });
 
       if (response.ok) {
@@ -321,50 +326,119 @@ export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsC
     setTimeout(() => setTestResult(null), 3000);
   };
 
-  const htmlFormExample = `<!-- Contact Form Example for StayCool Air Conditioning -->
-<form action="${webhookUrl}" method="POST">
-  <input type="text" name="name" placeholder="Your Name" required>
-  <input type="email" name="email" placeholder="Your Email" required>
-  <input type="tel" name="phone" placeholder="Your Phone">
-  <input type="text" name="company" placeholder="Company Name">
-  <textarea name="message" placeholder="Tell us about your air conditioning needs"></textarea>
-  <input type="hidden" name="source" value="staycool_website">
-  <button type="submit">Request Quote</button>
+  const htmlFormExample = `<!-- WAARSCHUWING: Dit is een server-side PHP voorbeeld voor veiligheid -->
+<!-- De webhook secret mag NOOIT in de browser zichtbaar zijn! -->
+<?php
+// contact-form.php - Veilige webhook integratie
+$webhook_url = '${webhookUrl}?tenant=${tenant.id}';
+$webhook_secret = '${webhookSecret}';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $payload = [
+        'name' => $_POST['name'],
+        'email' => $_POST['email'],
+        'phone' => $_POST['phone'] ?? '',
+        'company' => $_POST['company'] ?? '',
+        'message' => $_POST['message'] ?? '',
+        'source' => 'website_contact_form'
+    ];
+    
+    $json_payload = json_encode($payload);
+    $signature = 'sha256=' . hash_hmac('sha256', $json_payload, $webhook_secret);
+    
+    $ch = curl_init($webhook_url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $json_payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'X-Webhook-Signature: ' . $signature
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code === 201) {
+        echo '<div class="success">Bedankt! We nemen contact met u op.</div>';
+    } else {
+        echo '<div class="error">Er ging iets mis. Probeer het later opnieuw.</div>';
+    }
+}
+?>
+
+<!-- Het HTML formulier -->
+<form method="POST" action="contact-form.php">
+    <input type="text" name="name" placeholder="Uw naam" required>
+    <input type="email" name="email" placeholder="Uw email" required>
+    <input type="tel" name="phone" placeholder="Uw telefoon">
+    <input type="text" name="company" placeholder="Bedrijfsnaam">
+    <textarea name="message" placeholder="Vertel ons over uw airconditioning behoefte"></textarea>
+    <button type="submit">Offerte aanvragen</button>
 </form>`;
 
-  const jsExample = `// JavaScript Fetch Example for StayCool
-const formData = {
+  const jsExample = `// Node.js Server-side Example - VEILIG
+// GEBRUIK DIT NIET IN DE BROWSER!
+const crypto = require('crypto');
+const fetch = require('node-fetch');
+
+const webhookUrl = '${webhookUrl}?tenant=${tenant.id}';
+const webhookSecret = '${webhookSecret}';
+
+const leadData = {
   name: 'Jan Janssen',
   email: 'jan@bakkerijjanssen.nl',
   phone: '+31 6 1234 5678',
   company: 'Bakkerij Janssen',
-  message: 'We need air conditioning for our bakery, can you provide a quote?',
-  source: 'staycool_website'
+  message: 'We hebben airconditioning nodig voor onze bakkerij',
+  source: 'website_contact_form'
 };
 
-fetch('${webhookUrl}', {
+// Genereer HMAC-SHA256 signature
+const signature = 'sha256=' + crypto
+  .createHmac('sha256', webhookSecret)
+  .update(JSON.stringify(leadData))
+  .digest('hex');
+
+// Verstuur naar webhook
+fetch(webhookUrl, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-Webhook-Signature': 'your_signature_here'
+    'X-Webhook-Signature': signature
   },
-  body: JSON.stringify(formData)
+  body: JSON.stringify(leadData)
 })
 .then(response => response.json())
-.then(data => console.log('Lead created:', data));`;
+.then(data => {
+  console.log('Lead aangemaakt:', data);
+})
+.catch(error => {
+  console.error('Fout:', error);
+});`;
 
-  const curlExample = `# cURL Example for StayCool webhook
-curl -X POST ${webhookUrl} \\
+  const curlExample = `# cURL Voorbeeld met signature generatie
+# Stap 1: Definieer variabelen
+WEBHOOK_URL="${webhookUrl}?tenant=${tenant.id}"
+WEBHOOK_SECRET="${webhookSecret}"
+PAYLOAD='{
+  "name": "Jan Janssen",
+  "email": "jan@bakkerijjanssen.nl",
+  "phone": "+31 6 1234 5678",
+  "company": "Bakkerij Janssen",
+  "message": "We hebben airconditioning nodig voor onze bakkerij",
+  "source": "website_contact_form"
+}'
+
+# Stap 2: Genereer HMAC-SHA256 signature
+SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" -hex | sed 's/^.* //')
+SIGNATURE_HEADER="sha256=$SIGNATURE"
+
+# Stap 3: Verstuur het verzoek
+curl -X POST "$WEBHOOK_URL" \\
   -H "Content-Type: application/json" \\
-  -H "X-Webhook-Signature: your_signature_here" \\
-  -d '{
-    "name": "Jan Janssen",
-    "email": "jan@bakkerijjanssen.nl",
-    "phone": "+31 6 1234 5678",
-    "company": "Bakkerij Janssen",
-    "message": "We need air conditioning for our bakery, can you provide a quote?",
-    "source": "staycool_website"
-  }'`;
+  -H "X-Webhook-Signature: $SIGNATURE_HEADER" \\
+  -d "$PAYLOAD"`;
 
   return (
     <div className="space-y-6">
@@ -897,14 +971,14 @@ curl -X POST ${webhookUrl} \\
             <CardContent className="space-y-6">
               <Tabs defaultValue="html">
                 <TabsList>
-                  <TabsTrigger value="html">HTML Formulier</TabsTrigger>
-                  <TabsTrigger value="javascript">JavaScript</TabsTrigger>
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="html">PHP (Server-side)</TabsTrigger>
+                  <TabsTrigger value="javascript">Node.js (Server-side)</TabsTrigger>
+                  <TabsTrigger value="curl">cURL / Bash</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="html" className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>HTML Contactformulier</Label>
+                    <Label>PHP Server-side Implementatie (Veilig)</Label>
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -919,11 +993,14 @@ curl -X POST ${webhookUrl} \\
                     readOnly
                     className="font-mono text-sm h-48"
                   />
+                  <p className="text-sm text-amber-600 mt-2">
+                    ⚠️ Gebruik ALTIJD server-side code om je webhook secret veilig te houden!
+                  </p>
                 </TabsContent>
 
                 <TabsContent value="javascript" className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>JavaScript Fetch</Label>
+                    <Label>Node.js Server-side Implementatie</Label>
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -938,11 +1015,14 @@ curl -X POST ${webhookUrl} \\
                     readOnly
                     className="font-mono text-sm h-48"
                   />
+                  <p className="text-sm text-amber-600 mt-2">
+                    ⚠️ Dit is bedoeld voor Node.js servers, NIET voor browsers!
+                  </p>
                 </TabsContent>
 
                 <TabsContent value="curl" className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>cURL Commando</Label>
+                    <Label>cURL / Bash Script</Label>
                     <Button 
                       variant="outline" 
                       size="sm"
