@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, CheckCircle } from 'lucide-react'
+import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 export function SignUpForm() {
@@ -17,16 +17,43 @@ export function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [emailExists, setEmailExists] = useState<{
+    exists: boolean
+    suggestions?: Array<{action: string, text: string, url: string}>
+  } | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: ''
   })
 
+  const checkEmailExists = async (email: string) => {
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setEmailExists(data)
+        return data.exists
+      }
+      return false
+    } catch (error) {
+      console.error('Email check failed:', error)
+      return false
+    }
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setEmailExists(null)
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
@@ -40,6 +67,13 @@ export function SignUpForm() {
       setError('Wachtwoord moet minimaal 6 tekens lang zijn')
       setLoading(false)
       return
+    }
+
+    // Check if email already exists
+    const emailAlreadyExists = await checkEmailExists(formData.email)
+    if (emailAlreadyExists) {
+      setLoading(false)
+      return // The email exists warning will be shown via emailExists state
     }
 
     try {
@@ -122,6 +156,26 @@ export function SignUpForm() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          {emailExists?.exists && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <div className="ml-2">
+                <AlertDescription className="mb-3">
+                  Dit e-mailadres is al geregistreerd. Wat wil je doen?
+                </AlertDescription>
+                <div className="flex flex-col gap-2">
+                  {emailExists.suggestions?.map((suggestion, index) => (
+                    <Link key={index} href={suggestion.url}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        {suggestion.text}
+                      </Button>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </Alert>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="email">E-mailadres</Label>
@@ -130,7 +184,13 @@ export function SignUpForm() {
               type="email"
               placeholder="jouw@email.nl"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value })
+                // Clear email exists warning when user types a new email
+                if (emailExists?.exists) {
+                  setEmailExists(null)
+                }
+              }}
               required
               disabled={loading}
             />
