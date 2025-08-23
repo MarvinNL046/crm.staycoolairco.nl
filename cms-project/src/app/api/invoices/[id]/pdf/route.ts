@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // GET /api/invoices/[id]/pdf - Generate PDF for invoice
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const resolvedParams = await params;
-    // Get the invoice with items
+    // SECURITY: Get invoice with tenant validation
     const { data: invoice, error } = await supabase
       .from('invoices')
       .select(`
@@ -23,6 +27,7 @@ export async function GET(
         invoice_items(*)
       `)
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .single();
 
     if (error) {

@@ -1,20 +1,25 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
 
-export async function GET() {
+  const { supabase, tenantId } = authResult;
+
   try {
     const currentDate = new Date()
     const twelveMonthsAgo = new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1)
 
-    // Get all won leads from the last 12 months
+    // SECURITY: Get won leads from user's tenant only
     const { data: wonLeads, error } = await supabase
       .from('leads')
       .select('value, created_at, source')
       .eq('status', 'won')
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .gte('created_at', twelveMonthsAgo.toISOString())
       .order('created_at', { ascending: true })
 
@@ -34,7 +39,7 @@ export async function GET() {
     }
 
     // Process won leads
-    wonLeads?.forEach(lead => {
+    wonLeads?.forEach((lead: any) => {
       const monthKey = lead.created_at.slice(0, 7) // YYYY-MM format
       if (monthlyData[monthKey]) {
         monthlyData[monthKey].revenue += lead.value || 0

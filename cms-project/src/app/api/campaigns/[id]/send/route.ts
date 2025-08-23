@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
 export async function POST(
   request: NextRequest,
@@ -11,14 +7,22 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const body = await request.json()
     const { schedule_at } = body
 
-    // Get campaign
+    // Get campaign - SECURED: Filter by tenant
     const { data: campaign, error: campaignError } = await supabase
       .from('campaigns')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single()
 
     if (campaignError || !campaign) {
@@ -43,9 +47,8 @@ export async function POST(
       )
     }
 
-    // Get recipients based on segment
+    // Get recipients based on segment - SECURED: Already using authenticated tenantId
     let recipients: any[] = []
-    const tenantId = campaign.tenant_id
 
     if (campaign.segment_type === 'all' || campaign.segment_type === 'leads') {
       const { data: leads } = await supabase
@@ -56,7 +59,7 @@ export async function POST(
 
       if (leads) {
         recipients = recipients.concat(
-          leads.map(lead => ({
+          leads.map((lead: any) => ({
             lead_id: lead.id,
             email: lead.email,
             name: lead.name
@@ -74,7 +77,7 @@ export async function POST(
 
       if (contacts) {
         recipients = recipients.concat(
-          contacts.map(contact => ({
+          contacts.map((contact: any) => ({
             contact_id: contact.id,
             email: contact.email,
             name: contact.name
@@ -95,9 +98,10 @@ export async function POST(
       )
     }
 
-    // Create recipient records
+    // Create recipient records - SECURED: Add tenant_id
     const recipientRecords = uniqueRecipients.map(recipient => ({
       campaign_id: id,
+      tenant_id: tenantId,
       ...recipient,
       status: 'pending',
       created_at: new Date().toISOString()
@@ -144,6 +148,7 @@ export async function POST(
             click_rate: 28
           })
           .eq('id', id)
+          .eq('tenant_id', tenantId)
       }, 5000)
     }
 
@@ -151,6 +156,7 @@ export async function POST(
       .from('campaigns')
       .update(updateData)
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .select()
       .single()
 

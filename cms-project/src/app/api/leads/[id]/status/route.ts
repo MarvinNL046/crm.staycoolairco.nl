@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // PATCH /api/leads/[id]/status - Update lead status
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const resolvedParams = await params;
     const body = await request.json();
@@ -19,7 +23,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status is required' }, { status: 400 });
     }
 
-    // Update lead status
+    // SECURITY: Update lead status only for user's tenant
     const { data, error } = await supabase
       .from('leads')
       .update({ 
@@ -27,6 +31,7 @@ export async function PATCH(
         updated_at: new Date().toISOString()
       })
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .select()
       .single();
 

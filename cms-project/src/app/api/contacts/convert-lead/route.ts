@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
 // POST /api/contacts/convert-lead - Convert a lead to a contact
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId, user } = authResult;
+
     const body = await request.json()
-    const { lead_id, additional_data, tenant_id } = body
+    const { lead_id, additional_data } = body
     
     if (!lead_id) {
       return NextResponse.json({ error: 'lead_id is required' }, { status: 400 })
     }
     
-    if (!tenant_id) {
-      return NextResponse.json({ error: 'tenant_id is required' }, { status: 400 })
-    }
-    
-    // Get lead data
+    // Get lead data - SECURED: Filter by tenant
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .select('*')
       .eq('id', lead_id)
+      .eq('tenant_id', tenantId)
       .single()
     
     if (leadError || !lead) {
@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lead already converted' }, { status: 400 })
     }
     
-    // Create contact from lead data
+    // Create contact from lead data - SECURED: Use authenticated tenant and user
     const contactData = {
-      tenant_id: tenant_id,
+      tenant_id: tenantId,
       name: lead.name,
       email: lead.email,
       phone: lead.phone,
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       status: 'active',
       relationship_status: 'customer',
       temperature: 'warm',
+      created_by: user.id,
       ...additional_data // Allow overriding or adding additional fields
     }
     
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create contact' }, { status: 500 })
     }
     
-    // Update lead status
+    // Update lead status - SECURED: Filter by tenant
     const { error: updateError } = await supabase
       .from('leads')
       .update({ 
@@ -74,13 +75,14 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString()
       })
       .eq('id', lead_id)
+      .eq('tenant_id', tenantId)
     
     if (updateError) {
       console.error('Error updating lead:', updateError)
       // Continue anyway, contact was created successfully
     }
     
-    // Transfer appointments from lead to contact
+    // Transfer appointments from lead to contact - SECURED: Filter by tenant
     await supabase
       .from('appointments')
       .update({ 
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
         lead_id: null
       })
       .eq('lead_id', lead_id)
+      .eq('tenant_id', tenantId)
     
     return NextResponse.json({ 
       contact,

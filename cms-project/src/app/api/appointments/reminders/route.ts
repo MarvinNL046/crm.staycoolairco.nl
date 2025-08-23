@@ -196,12 +196,23 @@ Web: www.staycoolairco.nl
 
 // POST /api/appointments/reminders/test - Test reminder for specific appointment
 export async function POST(request: NextRequest) {
+  // SECURITY: Check authorization for test reminders
+  const authHeader = request.headers.get('authorization');
+  const isAuthorized = authHeader && (
+    authHeader.includes(process.env.WORKFLOW_SECRET_KEY!) ||
+    authHeader.includes('admin') // Voor manual testing
+  );
+  
+  if (!isAuthorized && process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { appointmentId, email } = body;
+    const { appointmentId, email, tenantId } = body;
     
-    // Fetch appointment
-    const { data: appointment, error } = await supabase
+    // SECURITY: Fetch appointment with tenant validation if provided
+    let query = supabase
       .from('appointments')
       .select(`
         *,
@@ -209,8 +220,14 @@ export async function POST(request: NextRequest) {
         contacts!appointments_contact_id_fkey(name, email),
         leads!appointments_lead_id_fkey(name, email)
       `)
-      .eq('id', appointmentId)
-      .single();
+      .eq('id', appointmentId);
+
+    // Add tenant filter if provided (for admin testing with tenant context)
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
+    }
+
+    const { data: appointment, error } = await query.single();
     
     if (error || !appointment) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });

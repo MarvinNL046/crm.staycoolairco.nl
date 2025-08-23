@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 import { mapDatabaseContactToContact, prepareContactForDatabase } from '@/lib/contacts-helpers'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
 
 // GET /api/contacts/[id] - Get a single contact
 export async function GET(
@@ -12,13 +8,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const { id } = await params
     
-    // Fetch contact
+    // Fetch contact - SECURED: Filter by tenant
     const { data: contact, error } = await supabase
       .from('contacts')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single()
     
     if (error) {
@@ -49,6 +53,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const { id } = await params
     const body = await request.json()
     
@@ -58,11 +69,12 @@ export async function PUT(
       updated_at: new Date().toISOString()
     });
     
-    // Update contact
+    // Update contact - SECURED: Filter by tenant
     const { data: contact, error } = await supabase
       .from('contacts')
       .update(updateData)
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .select()
       .single()
     
@@ -94,9 +106,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const { id } = await params
     
-    // Archive contact instead of deleting
+    // Archive contact instead of deleting - SECURED: Filter by tenant
     const { error } = await supabase
       .from('contacts')
       .update({
@@ -104,6 +123,7 @@ export async function DELETE(
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('tenant_id', tenantId)
     
     if (error) {
       if (error.code === 'PGRST116') {

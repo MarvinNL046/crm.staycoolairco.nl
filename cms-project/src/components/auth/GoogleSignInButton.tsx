@@ -56,7 +56,9 @@ export function GoogleSignInButton({
     // Define the callback function
     const handleCredentialResponse = async (response: CredentialResponse) => {
       try {
-        console.log('Google Sign-In response received')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Google Sign-In response received')
+        }
         
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
@@ -70,7 +72,9 @@ export function GoogleSignInButton({
           return
         }
         
-        console.log('Successfully logged in with Google')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Successfully logged in with Google')
+        }
         onSuccess?.(data)
         
         // Refresh and redirect

@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
 export async function GET(
   request: NextRequest,
@@ -11,10 +7,18 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const { data: campaign, error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single()
 
     if (error || !campaign) {
@@ -24,21 +28,22 @@ export async function GET(
       )
     }
 
-    // Get recipient stats if campaign has been sent
+    // Get recipient stats if campaign has been sent - SECURED: Filter by tenant
     if (campaign.status === 'sent' || campaign.status === 'sending') {
       const { data: recipientStats } = await supabase
         .from('campaign_recipients')
         .select('status')
         .eq('campaign_id', id)
+        .eq('tenant_id', tenantId)
 
       if (recipientStats) {
         const stats = {
           total: recipientStats.length,
-          delivered: recipientStats.filter(r => r.status === 'delivered').length,
-          opened: recipientStats.filter(r => r.status === 'opened').length,
-          clicked: recipientStats.filter(r => r.status === 'clicked').length,
-          bounced: recipientStats.filter(r => r.status === 'bounced').length,
-          unsubscribed: recipientStats.filter(r => r.status === 'unsubscribed').length
+          delivered: recipientStats.filter((r: any) => r.status === 'delivered').length,
+          opened: recipientStats.filter((r: any) => r.status === 'opened').length,
+          clicked: recipientStats.filter((r: any) => r.status === 'clicked').length,
+          bounced: recipientStats.filter((r: any) => r.status === 'bounced').length,
+          unsubscribed: recipientStats.filter((r: any) => r.status === 'unsubscribed').length
         }
         campaign.recipientStats = stats
       }
@@ -61,9 +66,16 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const body = await request.json()
     
-    // Update campaign
+    // Update campaign - SECURED: Filter by tenant
     const { data: campaign, error } = await supabase
       .from('campaigns')
       .update({
@@ -71,6 +83,7 @@ export async function PUT(
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .select()
       .single()
 
@@ -99,11 +112,19 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    // Only allow deletion of draft campaigns
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
+    // Only allow deletion of draft campaigns - SECURED: Filter by tenant
     const { data: campaign } = await supabase
       .from('campaigns')
       .select('status')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single()
 
     if (!campaign) {
@@ -124,6 +145,7 @@ export async function DELETE(
       .from('campaigns')
       .delete()
       .eq('id', id)
+      .eq('tenant_id', tenantId)
 
     if (error) {
       console.error('Error deleting campaign:', error)

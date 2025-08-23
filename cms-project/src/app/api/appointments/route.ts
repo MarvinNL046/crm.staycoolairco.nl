@@ -1,26 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/appointments - Get all appointments
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const searchParams = request.nextUrl.searchParams;
-    const tenantId = searchParams.get('tenant_id');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant ID is required' }, { status: 400 });
-    }
 
     let query = supabase
       .from('appointments')
       .select('*')
-      .eq('tenant_id', tenantId)
+      .eq('tenant_id', tenantId) // SECURITY: Use authenticated tenant only
       .order('start_time', { ascending: true });
 
     // Add date filters if provided
@@ -47,10 +46,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/appointments - Create new appointment
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const body = await request.json();
     const { 
-      tenant_id,
       title,
       description,
       location,
@@ -66,21 +72,17 @@ export async function POST(request: NextRequest) {
       notes
     } = body;
 
-    if (!tenant_id || !title || !start_time || !end_time) {
+    if (!title || !start_time || !end_time) {
       return NextResponse.json({ 
-        error: 'Missing required fields: tenant_id, title, start_time, end_time' 
+        error: 'Missing required fields: title, start_time, end_time' 
       }, { status: 400 });
     }
-
-    // Get current user ID (in a real app, this would come from auth)
-    // For now, we'll use a placeholder
-    const userId = '80496bff-b559-4b80-9102-3a84afdaa616'; // Same as tenant_id for testing
 
     const { data: appointment, error } = await supabase
       .from('appointments')
       .insert({
-        tenant_id,
-        created_by: userId,
+        tenant_id: tenantId, // SECURITY: Use authenticated tenant only
+        created_by: user.id, // SECURITY: Use authenticated user ID
         title,
         description,
         location,

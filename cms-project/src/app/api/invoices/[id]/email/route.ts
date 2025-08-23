@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 import { Resend } from 'resend';
 import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // POST /api/invoices/[id]/email - Send invoice via email
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const resolvedParams = await params;
     const body = await request.json();
     const { to, subject, message } = body;
 
-    // Get the invoice with items
+    // SECURITY: Get invoice with tenant validation
     const { data: invoice, error } = await supabase
       .from('invoices')
       .select(`
@@ -27,6 +31,7 @@ export async function POST(
         invoice_items(*)
       `)
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .single();
 
     if (error) {
@@ -81,7 +86,7 @@ Web: www.staycoolairco.nl
       ]
     });
 
-    // Update invoice status to 'sent' if it was 'draft'
+    // SECURITY: Update invoice status to 'sent' if it was 'draft' (tenant-safe)
     if (invoice.status === 'draft') {
       await supabase
         .from('invoices')
@@ -89,7 +94,8 @@ Web: www.staycoolairco.nl
           status: 'sent',
           updated_at: new Date().toISOString()
         })
-        .eq('id', resolvedParams.id);
+        .eq('id', resolvedParams.id)
+        .eq('tenant_id', tenantId); // SECURITY: Double-check tenant
     }
 
     return NextResponse.json({ 

@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
 
-export async function GET() {
+  const { supabase, tenantId } = authResult;
   try {
     const currentDate = new Date()
     const currentYear = currentDate.getFullYear()
@@ -21,11 +24,12 @@ export async function GET() {
     // Get year to date data
     const firstDayYear = new Date(currentYear, 0, 1)
     
-    // Get all revenue-generating leads (won status)
+    // SECURITY: Get revenue-generating leads from user's tenant only
     const { data: allWonLeads, error } = await supabase
       .from('leads')
       .select('*')
       .eq('status', 'won')
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -34,22 +38,22 @@ export async function GET() {
     }
 
     // Calculate metrics
-    const currentMonthRevenue = allWonLeads?.filter(lead => {
+    const currentMonthRevenue = allWonLeads?.filter((lead: any) => {
       const leadDate = new Date(lead.created_at)
       return leadDate >= firstDayCurrentMonth && leadDate < firstDayNextMonth
-    }).reduce((sum, lead) => sum + (lead.value || 0), 0) || 0
+    }).reduce((sum: number, lead: any) => sum + (lead.value || 0), 0) || 0
 
-    const previousMonthRevenue = allWonLeads?.filter(lead => {
+    const previousMonthRevenue = allWonLeads?.filter((lead: any) => {
       const leadDate = new Date(lead.created_at)
       return leadDate >= firstDayPreviousMonth && leadDate < firstDayCurrentMonth
-    }).reduce((sum, lead) => sum + (lead.value || 0), 0) || 0
+    }).reduce((sum: number, lead: any) => sum + (lead.value || 0), 0) || 0
 
-    const yearToDateRevenue = allWonLeads?.filter(lead => {
+    const yearToDateRevenue = allWonLeads?.filter((lead: any) => {
       const leadDate = new Date(lead.created_at)
       return leadDate >= firstDayYear
-    }).reduce((sum, lead) => sum + (lead.value || 0), 0) || 0
+    }).reduce((sum: number, lead: any) => sum + (lead.value || 0), 0) || 0
 
-    const totalRevenue = allWonLeads?.reduce((sum, lead) => sum + (lead.value || 0), 0) || 0
+    const totalRevenue = allWonLeads?.reduce((sum: number, lead: any) => sum + (lead.value || 0), 0) || 0
 
     // Calculate average deal size
     const averageDealSize = allWonLeads && allWonLeads.length > 0 
@@ -58,14 +62,14 @@ export async function GET() {
 
     // Group revenue by source
     const revenueBySource: { [key: string]: number } = {}
-    allWonLeads?.forEach(lead => {
+    allWonLeads?.forEach((lead: any) => {
       const source = lead.source || 'Unknown'
       revenueBySource[source] = (revenueBySource[source] || 0) + (lead.value || 0)
     })
 
     // Group revenue by assigned person
     const revenueByPerson: { [key: string]: number } = {}
-    allWonLeads?.forEach(lead => {
+    allWonLeads?.forEach((lead: any) => {
       const person = lead.assignedTo || 'Unassigned'
       revenueByPerson[person] = (revenueByPerson[person] || 0) + (lead.value || 0)
     })
@@ -80,10 +84,10 @@ export async function GET() {
     for (let q = 0; q < 4; q++) {
       const quarterStart = new Date(currentYear, q * 3, 1)
       const quarterEnd = new Date(currentYear, (q + 1) * 3, 1)
-      const quarterRevenue = allWonLeads?.filter(lead => {
+      const quarterRevenue = allWonLeads?.filter((lead: any) => {
         const leadDate = new Date(lead.created_at)
         return leadDate >= quarterStart && leadDate < quarterEnd
-      }).reduce((sum, lead) => sum + (lead.value || 0), 0) || 0
+      }).reduce((sum: number, lead: any) => sum + (lead.value || 0), 0) || 0
       
       quarterlyRevenue.push({
         quarter: `Q${q + 1}`,
@@ -109,7 +113,7 @@ export async function GET() {
       byPerson: Object.entries(revenueByPerson).map(([person, revenue]) => ({
         person,
         revenue,
-        deals: allWonLeads?.filter(lead => (lead.assignedTo || 'Unassigned') === person).length || 0
+        deals: allWonLeads?.filter((lead: any) => (lead.assignedTo || 'Unassigned') === person).length || 0
       })).sort((a, b) => b.revenue - a.revenue),
       quarterly: quarterlyRevenue
     })

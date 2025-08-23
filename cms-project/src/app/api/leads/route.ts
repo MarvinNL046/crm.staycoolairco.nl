@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/leads - Get all leads
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const source = searchParams.get('source');
-    const tenantId = searchParams.get('tenant_id');
 
-    // Build query
+    // Build query - SECURITY: Use authenticated tenant ID only
     let query = supabase
       .from('leads')
       .select('*')
-      .eq('archived', false); // Only get non-archived leads
-    
-    // Add tenant filter if provided
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
+      .eq('archived', false)
+      .eq('tenant_id', tenantId); // Only user's tenant data
     
     query = query.order('created_at', { ascending: false });
 
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data to match frontend expectations
-    const transformedLeads = leads?.map(lead => ({
+    const transformedLeads = leads?.map((lead: any) => ({
       id: lead.id,
       name: lead.name || 'Unknown',
       email: lead.email || '',
@@ -88,17 +87,21 @@ export async function GET(request: NextRequest) {
 
 // POST /api/leads - Create new lead
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const body = await request.json();
-    
-    // Get tenant_id from the request or use a default
-    // In a real app, this would come from the authenticated user's session
-    const tenantId = body.tenant_id || '80496bff-b559-4b80-9102-3a84afdaa616';
     
     const { data: lead, error } = await supabase
       .from('leads')
       .insert({
-        tenant_id: tenantId,
+        tenant_id: tenantId, // SECURITY: Use authenticated tenant only
         name: body.name,
         email: body.email,
         phone: body.phone,
@@ -114,7 +117,7 @@ export async function POST(request: NextRequest) {
         value: body.value || 0,
         notes: body.notes,
         tags: body.tags || [],
-        created_by: body.created_by
+        created_by: user.id // SECURITY: Use authenticated user ID
       })
       .select()
       .single();

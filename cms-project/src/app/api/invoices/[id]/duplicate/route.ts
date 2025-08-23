@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // POST /api/invoices/[id]/duplicate - Duplicate invoice
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const resolvedParams = await params;
-    // Get the original invoice with items
+    // SECURITY: Get original invoice with tenant validation
     const { data: originalInvoice, error: fetchError } = await supabase
       .from('invoices')
       .select(`
@@ -20,6 +24,7 @@ export async function POST(
         invoice_items(*)
       `)
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .single();
 
     if (fetchError) {
@@ -70,8 +75,8 @@ export async function POST(
         payment_method: originalInvoice.payment_method,
         contact_id: originalInvoice.contact_id,
         lead_id: originalInvoice.lead_id,
-        tenant_id: originalInvoice.tenant_id,
-        created_by: originalInvoice.created_by,
+        tenant_id: tenantId, // SECURITY: Use authenticated tenant
+        created_by: user.id, // SECURITY: Use authenticated user
         created_at: now.toISOString(),
         updated_at: now.toISOString()
       })

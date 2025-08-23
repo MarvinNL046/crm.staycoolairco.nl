@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
 
-export async function GET() {
+  const { supabase, tenantId } = authResult;
   try {
     const currentDate = new Date()
     const currentYear = currentDate.getFullYear()
@@ -29,19 +32,20 @@ export async function GET() {
         .select('total_amount, issue_date, invoice_type')
         .in('status', ['sent', 'paid'])
         .eq('invoice_type', 'invoice')
+        .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
         .gte('issue_date', firstDayYear.toISOString())
 
       if (invoices) {
         invoiceRevenue.current = invoices
-          .filter(inv => new Date(inv.issue_date) >= firstDayCurrentMonth && new Date(inv.issue_date) < firstDayNextMonth)
-          .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
+          .filter((inv: any) => new Date(inv.issue_date) >= firstDayCurrentMonth && new Date(inv.issue_date) < firstDayNextMonth)
+          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0)
         
         invoiceRevenue.previous = invoices
-          .filter(inv => new Date(inv.issue_date) >= firstDayPreviousMonth && new Date(inv.issue_date) < firstDayCurrentMonth)
-          .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
+          .filter((inv: any) => new Date(inv.issue_date) >= firstDayPreviousMonth && new Date(inv.issue_date) < firstDayCurrentMonth)
+          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0)
         
         invoiceRevenue.ytd = invoices
-          .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
+          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0)
       }
     } catch (error) {
       hasInvoicesTable = false
@@ -55,19 +59,20 @@ export async function GET() {
         .from('expenses')
         .select('total_amount, expense_date')
         .in('status', ['approved', 'paid'])
+        .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
         .gte('expense_date', firstDayYear.toISOString())
 
       if (expenseData) {
         expenses.current = expenseData
-          .filter(exp => new Date(exp.expense_date) >= firstDayCurrentMonth && new Date(exp.expense_date) < firstDayNextMonth)
-          .reduce((sum, exp) => sum + (exp.total_amount || 0), 0)
+          .filter((exp: any) => new Date(exp.expense_date) >= firstDayCurrentMonth && new Date(exp.expense_date) < firstDayNextMonth)
+          .reduce((sum: number, exp: any) => sum + (exp.total_amount || 0), 0)
         
         expenses.previous = expenseData
-          .filter(exp => new Date(exp.expense_date) >= firstDayPreviousMonth && new Date(exp.expense_date) < firstDayCurrentMonth)
-          .reduce((sum, exp) => sum + (exp.total_amount || 0), 0)
+          .filter((exp: any) => new Date(exp.expense_date) >= firstDayPreviousMonth && new Date(exp.expense_date) < firstDayCurrentMonth)
+          .reduce((sum: number, exp: any) => sum + (exp.total_amount || 0), 0)
         
         expenses.ytd = expenseData
-          .reduce((sum, exp) => sum + (exp.total_amount || 0), 0)
+          .reduce((sum: number, exp: any) => sum + (exp.total_amount || 0), 0)
       }
     } catch (error) {
       hasExpensesTable = false
@@ -81,19 +86,20 @@ export async function GET() {
         .from('leads')
         .select('value, created_at')
         .eq('status', 'won')
+        .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
         .gte('created_at', firstDayYear.toISOString())
 
       if (wonLeads) {
         leadRevenue.current = wonLeads
-          .filter(lead => new Date(lead.created_at) >= firstDayCurrentMonth && new Date(lead.created_at) < firstDayNextMonth)
-          .reduce((sum, lead) => sum + (lead.value || 0), 0)
+          .filter((lead: any) => new Date(lead.created_at) >= firstDayCurrentMonth && new Date(lead.created_at) < firstDayNextMonth)
+          .reduce((sum: number, lead: any) => sum + (lead.value || 0), 0)
         
         leadRevenue.previous = wonLeads
-          .filter(lead => new Date(lead.created_at) >= firstDayPreviousMonth && new Date(lead.created_at) < firstDayCurrentMonth)
-          .reduce((sum, lead) => sum + (lead.value || 0), 0)
+          .filter((lead: any) => new Date(lead.created_at) >= firstDayPreviousMonth && new Date(lead.created_at) < firstDayCurrentMonth)
+          .reduce((sum: number, lead: any) => sum + (lead.value || 0), 0)
         
         leadRevenue.ytd = wonLeads
-          .reduce((sum, lead) => sum + (lead.value || 0), 0)
+          .reduce((sum: number, lead: any) => sum + (lead.value || 0), 0)
       }
     }
 
@@ -130,12 +136,12 @@ export async function GET() {
         
         if (invoiceItems) {
           const btw21 = invoiceItems
-            .filter(item => item.tax_rate === 21)
-            .reduce((sum, item) => sum + (item.tax_amount || 0), 0)
+            .filter((item: any) => item.tax_rate === 21)
+            .reduce((sum: number, item: any) => sum + (item.tax_amount || 0), 0)
           
           const btw9 = invoiceItems
-            .filter(item => item.tax_rate === 9)
-            .reduce((sum, item) => sum + (item.tax_amount || 0), 0)
+            .filter((item: any) => item.tax_rate === 9)
+            .reduce((sum: number, item: any) => sum + (item.tax_amount || 0), 0)
           
           const btwDeductible = hasExpensesTable ? expenses.ytd * 0.21 : 0 // Simplified: assume 21% on all expenses
           

@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/customers - Get all customers
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const tenant_id = searchParams.get('tenant_id');
-    
     let query = supabase
       .from('customers')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
-
-    if (tenant_id) {
-      query = query.eq('tenant_id', tenant_id);
-    }
 
     const { data: customers, error } = await query;
 
@@ -36,12 +34,20 @@ export async function GET(request: NextRequest) {
 
 // POST /api/customers - Create new customer
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const body = await request.json();
     
     const { data: customer, error } = await supabase
       .from('customers')
-      .insert([body])
+      .insert([{ ...body, tenant_id: tenantId }])
       .select()
       .single();
 

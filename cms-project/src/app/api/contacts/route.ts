@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 import { mapDatabaseContactToContact, prepareContactForDatabase } from '@/lib/contacts-helpers'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
 
 // GET /api/contacts - Get all contacts
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const searchParams = request.nextUrl.searchParams
     
@@ -19,7 +23,6 @@ export async function GET(request: NextRequest) {
     const company_id = searchParams.get('company_id')
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
-    const tenantId = searchParams.get('tenant_id')
     
     // Build query
     let query = supabase
@@ -28,10 +31,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
-    // Filter by tenant_id if provided
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId)
-    }
+    // SECURITY: Always filter by authenticated tenant
+    query = query.eq('tenant_id', tenantId)
     
     // Apply filters
     if (status) {
@@ -78,15 +79,16 @@ export async function GET(request: NextRequest) {
 
 // POST /api/contacts - Create a new contact
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const body = await request.json()
-    
-    // Get tenant_id from request body or query params
-    const tenantId = body.tenant_id || request.nextUrl.searchParams.get('tenant_id')
-    
-    if (!tenantId) {
-      return NextResponse.json({ error: 'tenant_id is required' }, { status: 400 })
-    }
     
     // Prepare contact data
     const contactData = {

@@ -54,8 +54,10 @@ export function SignInForm() {
     setError(null)
 
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback?next=${next}`
-      console.log('Google OAuth redirect URL:', redirectUrl)
+      const redirectUrl = `${window.location.origin}/auth/callback-enhanced?next=${next}`
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Google OAuth redirect URL:', redirectUrl)
+      }
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

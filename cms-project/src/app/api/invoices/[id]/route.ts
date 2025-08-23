@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/invoices/[id] - Get single invoice
 export async function GET(
@@ -11,6 +7,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const resolvedParams = await params;
     const { data: invoice, error } = await supabase
       .from('invoices')
@@ -19,6 +22,7 @@ export async function GET(
         invoice_items(*)
       `)
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (error) {
@@ -90,11 +94,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const resolvedParams = await params;
     const body = await request.json();
     const { items, ...invoiceData } = body;
 
-    // Update invoice
+    // Update invoice - SECURED: Filter by tenant
     const { data: updatedInvoice, error: invoiceError } = await supabase
       .from('invoices')
       .update({
@@ -128,6 +139,7 @@ export async function PUT(
         updated_at: new Date().toISOString()
       })
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId)
       .select()
       .single();
 
@@ -136,9 +148,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });
     }
 
-    // Delete existing items and recreate them
+    // Delete existing items and recreate them - SECURED: Additional tenant filtering via invoice_id
     if (items && items.length > 0) {
-      // Delete existing items
+      // Delete existing items (invoice_id already filtered by tenant via invoice update above)
       await supabase
         .from('invoice_items')
         .delete()
@@ -189,7 +201,27 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     const resolvedParams = await params;
+    
+    // Verify invoice exists and belongs to tenant before deletion
+    const { data: invoice } = await supabase
+      .from('invoices')
+      .select('id')
+      .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (!invoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
     // First delete all invoice items (due to foreign key constraint)
     const { error: itemsError } = await supabase
       .from('invoice_items')
@@ -201,11 +233,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete invoice items' }, { status: 500 });
     }
 
-    // Then delete the invoice
+    // Then delete the invoice - SECURED: Filter by tenant
     const { error: invoiceError } = await supabase
       .from('invoices')
       .delete()
-      .eq('id', resolvedParams.id);
+      .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId);
 
     if (invoiceError) {
       console.error('Error deleting invoice:', invoiceError);

@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/invoices - Fetch all invoices for tenant
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const searchParams = request.nextUrl.searchParams;
-    const tenantId = searchParams.get('tenant_id') || '80496bff-b559-4b80-9102-3a84afdaa616';
     const type = searchParams.get('type'); // 'quote' or 'invoice'
     const status = searchParams.get('status');
     
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform data to match frontend expectations
-    const transformedInvoices = invoices?.map(invoice => ({
+    const transformedInvoices = invoices?.map((invoice: any) => ({
       id: invoice.id,
       invoiceNumber: invoice.invoice_number,
       title: `${invoice.invoice_type === 'quote' ? 'Offerte' : 'Factuur'} ${invoice.customer_name}`,
@@ -84,9 +86,16 @@ export async function GET(request: NextRequest) {
 
 // POST /api/invoices - Create new invoice
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const body = await request.json();
-    const tenantId = '80496bff-b559-4b80-9102-3a84afdaa616'; // TODO: Get from auth
     
     // Create invoice
     const { data: invoice, error: invoiceError } = await supabase

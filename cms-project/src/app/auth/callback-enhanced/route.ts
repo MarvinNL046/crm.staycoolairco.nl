@@ -22,10 +22,13 @@ export async function GET(request: NextRequest) {
       const googleTokens = extractProviderToken(data.session)
       
       if (googleTokens) {
-        console.log('Google OAuth tokens available:', {
-          hasAccessToken: !!googleTokens.provider_token,
-          hasRefreshToken: !!googleTokens.provider_refresh_token
-        })
+        // SECURITY: Only log in development mode to prevent sensitive data leaks
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Google OAuth tokens available:', {
+            hasAccessToken: !!googleTokens.provider_token,
+            hasRefreshToken: !!googleTokens.provider_refresh_token
+          })
+        }
         
         // In a production app, you might want to store these tokens securely
         // for later use when accessing Google APIs on behalf of the user
@@ -35,12 +38,12 @@ export async function GET(request: NextRequest) {
       // Get the current user's profile
       const { data: { user } } = await supabase.auth.getUser()
       
-      if (user) {
+      if (user && process.env.NODE_ENV === 'development') {
+        // SECURITY: Only log user details in development mode
         console.log('User logged in successfully:', {
           id: user.id,
           email: user.email,
-          provider: user.app_metadata.provider,
-          providers: user.app_metadata.providers
+          provider: user.app_metadata.provider
         })
       }
 

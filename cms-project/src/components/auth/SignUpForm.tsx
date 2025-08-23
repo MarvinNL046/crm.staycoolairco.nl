@@ -81,7 +81,7 @@ export function SignUpForm() {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/crm`,
+          emailRedirectTo: `${window.location.origin}/auth/callback-enhanced?next=/crm`,
         },
       })
 
@@ -105,7 +105,7 @@ export function SignUpForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/crm`,
+          redirectTo: `${window.location.origin}/auth/callback-enhanced?next=/crm`,
         },
       })
 

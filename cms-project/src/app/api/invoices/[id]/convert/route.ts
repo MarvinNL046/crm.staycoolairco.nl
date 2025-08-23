@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // POST /api/invoices/[id]/convert - Convert quote to invoice
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId, user } = authResult;
+
   try {
     const resolvedParams = await params;
-    console.log('Converting quote with ID:', resolvedParams.id);
     
-    // Get the original quote with items
+    // SECURITY: Get the original quote with tenant validation
     const { data: originalQuote, error: fetchError } = await supabase
       .from('invoices')
       .select(`
@@ -22,7 +25,8 @@ export async function POST(
         invoice_items(*)
       `)
       .eq('id', resolvedParams.id)
-      .eq('invoice_type', 'quote') // Ensure it's a quote
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
+      .eq('invoice_type', 'quote')
       .single();
 
     if (fetchError) {
@@ -52,11 +56,12 @@ export async function POST(
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     
-    // Get next invoice number for this year/month
+    // SECURITY: Get next invoice number for this year/month (tenant-specific)
     const { data: lastInvoice } = await supabase
       .from('invoices')
       .select('invoice_number')
       .eq('invoice_type', 'invoice')
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .like('invoice_number', `FAC-${year}${month}%`)
       .order('invoice_number', { ascending: false })
       .limit(1);
@@ -110,8 +115,8 @@ export async function POST(
         payment_method: originalQuote.payment_method,
         contact_id: originalQuote.contact_id,
         lead_id: originalQuote.lead_id,
-        tenant_id: originalQuote.tenant_id,
-        created_by: originalQuote.created_by,
+        tenant_id: tenantId, // SECURITY: Use authenticated tenant
+        created_by: user.id, // SECURITY: Use authenticated user
         created_at: now.toISOString(),
         updated_at: now.toISOString()
       })

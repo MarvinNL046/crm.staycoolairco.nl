@@ -1,20 +1,24 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
     // Get data for the last 12 weeks
     const currentDate = new Date()
     const twelveWeeksAgo = new Date(currentDate.getTime() - 84 * 24 * 60 * 60 * 1000)
 
-    // Get leads data
+    // Get leads data - SECURED: Filter by tenant
     const { data: leads, error: leadsError } = await supabase
       .from('leads')
       .select('created_at, status, value')
+      .eq('tenant_id', tenantId)
       .gte('created_at', twelveWeeksAgo.toISOString())
       .order('created_at', { ascending: true })
 
@@ -23,10 +27,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch trends data' }, { status: 500 })
     }
 
-    // Get contacts data
+    // Get contacts data - SECURED: Filter by tenant
     const { data: contacts, error: contactsError } = await supabase
       .from('contacts')
       .select('created_at')
+      .eq('tenant_id', tenantId)
       .gte('created_at', twelveWeeksAgo.toISOString())
       .order('created_at', { ascending: true })
 
@@ -53,7 +58,7 @@ export async function GET() {
     }
 
     // Process leads data
-    leads?.forEach(lead => {
+    leads?.forEach((lead: any) => {
       const createdAt = new Date(lead.created_at)
       const weekKey = getWeekKey(createdAt)
       if (weeklyData[weekKey]) {
@@ -66,7 +71,7 @@ export async function GET() {
     })
 
     // Process contacts data
-    contacts?.forEach(contact => {
+    contacts?.forEach((contact: any) => {
       const createdAt = new Date(contact.created_at)
       const weekKey = getWeekKey(createdAt)
       if (weeklyData[weekKey]) {
@@ -98,8 +103,8 @@ export async function GET() {
       summary: {
         totalLeads: leads?.length || 0,
         totalContacts: contacts?.length || 0,
-        totalRevenue: leads?.filter(l => l.status === 'won').reduce((sum, l) => sum + (l.value || 0), 0) || 0,
-        totalConversions: leads?.filter(l => l.status === 'won').length || 0
+        totalRevenue: leads?.filter((l: any) => l.status === 'won').reduce((sum: number, l: any) => sum + (l.value || 0), 0) || 0,
+        totalConversions: leads?.filter((l: any) => l.status === 'won').length || 0
       }
     })
 

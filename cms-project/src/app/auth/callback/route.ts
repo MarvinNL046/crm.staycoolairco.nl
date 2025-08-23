@@ -5,7 +5,12 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get('next') ?? '/crm'
+  let next = searchParams.get('next') ?? '/crm'
+  
+  // SECURITY: Ensure the redirect URL is relative to prevent open redirects
+  if (!next.startsWith('/')) {
+    next = '/crm'
+  }
 
   if (code) {
     const supabase = await createClient()

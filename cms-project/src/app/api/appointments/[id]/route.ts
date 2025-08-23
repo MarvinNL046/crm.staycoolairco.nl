@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth';
 
 // GET /api/appointments/[id] - Get single appointment
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const resolvedParams = await params;
     const { data: appointment, error } = await supabase
       .from('appointments')
       .select('*')
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .single();
 
     if (error) {
@@ -35,6 +40,14 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const resolvedParams = await params;
     const body = await request.json();
@@ -65,6 +78,7 @@ export async function PUT(
       .from('appointments')
       .update(updateData)
       .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId) // SECURITY: Only user's tenant
       .select()
       .single();
 
@@ -98,13 +112,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const resolvedParams = await params;
     
     const { error } = await supabase
       .from('appointments')
       .delete()
-      .eq('id', resolvedParams.id);
+      .eq('id', resolvedParams.id)
+      .eq('tenant_id', tenantId); // SECURITY: Only user's tenant
 
     if (error) {
       console.error('Error deleting appointment:', error);

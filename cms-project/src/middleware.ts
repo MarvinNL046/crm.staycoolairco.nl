@@ -38,11 +38,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Check if user has a valid profile (is actually registered)
+  let hasValidProfile = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+    
+    hasValidProfile = !!profile
+  }
+
   // Protected routes configuration
   const protectedRoutes = ['/admin', '/crm']
   const superAdminRoutes = ['/super-admin']
   const authRoutes = ['/auth/login', '/auth/signup', '/auth/reset-password']
-  const publicRoutes = ['/', '/auth/callback', '/auth/auth-code-error']
+  const publicRoutes = ['/', '/auth/callback', '/auth/callback-enhanced', '/auth/auth-code-error']
   
   const path = request.nextUrl.pathname
 
@@ -53,7 +65,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.includes(path)
 
   // Super admin route protection
-  if (isSuperAdminRoute && user) {
+  if (isSuperAdminRoute && user && hasValidProfile) {
     // Check if user is super admin
     const { data: superAdmin } = await supabase
       .from('super_admins')
@@ -68,7 +80,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle tenant impersonation for super admins
-  if (isProtectedRoute && user && !isSuperAdminRoute) {
+  if (isProtectedRoute && user && hasValidProfile && !isSuperAdminRoute) {
     // Check if super admin is impersonating a tenant
     const impersonatingTenantId = request.cookies.get('impersonating_tenant_id')?.value
     const originalSuperAdminId = request.cookies.get('original_super_admin_id')?.value
@@ -83,15 +95,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect to login if accessing protected route without authentication
-  if ((isProtectedRoute || isSuperAdminRoute) && !user) {
+  // Redirect to login if accessing protected route without authentication or valid profile
+  if ((isProtectedRoute || isSuperAdminRoute) && (!user || !hasValidProfile)) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('next', path)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to dashboard if accessing auth routes while authenticated
-  if (isAuthRoute && user) {
+  // Redirect to dashboard if accessing auth routes while authenticated with valid profile
+  if (isAuthRoute && user && hasValidProfile) {
     // Check if user is super admin to redirect to appropriate dashboard
     const { data: superAdmin } = await supabase
       .from('super_admins')
@@ -103,8 +115,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(dashboardUrl, request.url))
   }
 
-  // Special handling for update-password route - must be authenticated
-  if (path === '/auth/update-password' && !user) {
+  // Special handling for update-password route - must be authenticated with valid profile
+  if (path === '/auth/update-password' && (!user || !hasValidProfile)) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 

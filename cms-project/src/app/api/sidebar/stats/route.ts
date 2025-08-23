@@ -1,16 +1,20 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Get leads counts by status
+    // SECURITY: Authenticate user and get tenant
+    const authResult = await authenticateApiRequest(request);
+    if ('error' in authResult) {
+      return createUnauthorizedResponse(authResult.error, authResult.status);
+    }
+    const { supabase, tenantId } = authResult;
+
+    // Get leads counts by status - SECURED: Filter by tenant
     const { data: leads, error: leadsError } = await supabase
       .from('leads')
       .select('status')
+      .eq('tenant_id', tenantId)
 
     if (leadsError) {
       console.error('Error fetching leads for sidebar:', leadsError)
@@ -18,14 +22,15 @@ export async function GET() {
     }
 
     // Get deals counts (using leads with proposal/won status as deals)
-    const deals = leads?.filter(lead => 
+    const deals = leads?.filter((lead: any) => 
       lead.status === 'proposal' || lead.status === 'won' || lead.status === 'qualified'
     ) || []
 
-    // Get contacts count
+    // Get contacts count - SECURED: Filter by tenant
     const { count: contactsCount, error: contactsError } = await supabase
       .from('contacts')
       .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
 
     if (contactsError) {
       console.error('Error fetching contacts count:', contactsError)
@@ -38,17 +43,18 @@ export async function GET() {
       const { count: invoiceCount } = await supabase
         .from('invoices')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
       invoicesCount = invoiceCount || 0
     } catch (error) {
       // Table might not exist, use leads with 'won' status as invoices
-      invoicesCount = leads?.filter(lead => lead.status === 'won').length || 0
+      invoicesCount = leads?.filter((lead: any) => lead.status === 'won').length || 0
     }
 
     // Calculate totals and urgent counts
     const totalLeads = leads?.length || 0
-    const newLeads = leads?.filter(lead => lead.status === 'new').length || 0
+    const newLeads = leads?.filter((lead: any) => lead.status === 'new').length || 0
     const totalDeals = deals.length
-    const wonDeals = leads?.filter(lead => lead.status === 'won').length || 0
+    const wonDeals = leads?.filter((lead: any) => lead.status === 'won').length || 0
     
     // Define urgency based on business rules
     const urgentInvoices = Math.min(invoicesCount, 3) // Max 3 urgent for demo

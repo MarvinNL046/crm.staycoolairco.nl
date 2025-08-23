@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/auth/api-auth'
 
 // GET /api/expenses - Get all expenses
 export async function GET(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status')
@@ -17,6 +21,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('expenses')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('expense_date', { ascending: false })
 
     // Apply filters
@@ -57,6 +62,14 @@ export async function GET(request: NextRequest) {
 
 // POST /api/expenses - Create new expense
 export async function POST(request: NextRequest) {
+  // SECURITY: Authenticate user and get tenant
+  const authResult = await authenticateApiRequest(request);
+  if ('error' in authResult) {
+    return createUnauthorizedResponse(authResult.error, authResult.status);
+  }
+
+  const { supabase, tenantId } = authResult;
+
   try {
     const body = await request.json()
     
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
     const totalAmount = body.amount + (body.tax_amount || 0)
     
     const newExpense = {
-      tenant_id: '80496bff-b559-4b80-9102-3a84afdaa616', // Default tenant
+      tenant_id: tenantId,
       expense_number: expenseNumber,
       category: body.category,
       status: body.status || 'pending',
