@@ -44,3 +44,10 @@ next-env.d.ts
 # GitHub CLI binary
 gh_2.46.0_linux_amd64/
 gh_2.46.0_linux_amd64.tar.gz
+
+# Test scripts with secrets
+test-webhook*.sh
+quick-webhook-test.sh
+test-webhooks.js
+*webhook-test*
+*.test.sh
