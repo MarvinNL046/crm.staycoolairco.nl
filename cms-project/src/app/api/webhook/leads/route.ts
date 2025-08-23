@@ -1,6 +1,18 @@
+/**
+ * Production-Ready Lead Webhook API
+ * Secure, monitored, and fully functional webhook endpoint
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import crypto from 'crypto'
+import { createBrowserClient } from '@supabase/ssr'
+import {
+  WebhookRateLimit,
+  WebhookLogger,
+  WebhookValidator,
+  validateWebhookSignature,
+  getClientIP,
+  getWebhookConfig
+} from '@/lib/webhook-security'
 
 // Webhook payload interface
 interface WebhookPayload {
@@ -11,25 +23,18 @@ interface WebhookPayload {
   message?: string
   source?: string
   website?: string
-  // Additional fields
+  metadata?: Record<string, any>
   [key: string]: any
 }
 
-// Webhook validation
-function validateWebhookSignature(body: string, signature: string, secret: string): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('hex')
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature, 'hex'),
-    Buffer.from(expectedSignature, 'hex')
-  )
-}
+// Create Supabase client
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // Transform webhook data to lead format
-function transformToLead(payload: WebhookPayload) {
+function transformToLead(payload: WebhookPayload, tenantId: string) {
   // Extract company name from email domain if not provided
   const emailDomain = payload.email?.split('@')[1]
   const companyFromEmail = emailDomain ? 
@@ -37,115 +42,326 @@ function transformToLead(payload: WebhookPayload) {
     'Unknown Company'
 
   return {
-    companyName: payload.company || companyFromEmail,
-    contactName: payload.name,
+    tenant_id: tenantId,
+    company_name: payload.company || companyFromEmail,
+    contact_name: payload.name,
     email: payload.email,
     phone: payload.phone || null,
     website: payload.website || (emailDomain ? `https://${emailDomain}` : null),
-    source: payload.source || 'WEBSITE',
+    source: payload.source || 'WEBHOOK',
     status: 'NEW',
     priority: 'MEDIUM',
-    description: payload.message || 'Lead from contact form',
-    notes: `Auto-imported from webhook\n\nOriginal payload:\n${JSON.stringify(payload, null, 2)}`,
-    // Will be set by auth system when implemented
-    createdById: 'system', // Placeholder
-    assignedToId: null
+    description: payload.message || 'Lead from webhook',
+    notes: `Auto-imported from webhook\n\nSource: ${payload.source || 'unknown'}\nReceived: ${new Date().toISOString()}`,
+    metadata: payload.metadata || {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  let tenantId: string | null = null
+  let webhookLogger: WebhookLogger | null = null
+  let clientIp: string = 'unknown'
+
   try {
-    const headersList = await headers()
-    const signature = headersList.get('x-webhook-signature')
-    const contentType = headersList.get('content-type')
+    // Get client IP and headers
+    clientIp = getClientIP(request)
+    const signature = request.headers.get('x-webhook-signature')
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    
+    // Get tenant ID from URL parameter
+    const { searchParams } = new URL(request.url)
+    tenantId = searchParams.get('tenant')
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { 
+          error: 'Missing tenant parameter',
+          message: 'Webhook URL must include tenant parameter'
+        },
+        { status: 400 }
+      )
+    }
+
+    // Initialize webhook logger
+    webhookLogger = new WebhookLogger()
     
     // Get raw body for signature validation
     const body = await request.text()
     
-    // Parse JSON
+    // Parse JSON payload
     let payload: WebhookPayload
     try {
       payload = JSON.parse(body)
     } catch (error) {
-      console.error('Invalid JSON in webhook payload:', error)
+      await webhookLogger?.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: body.substring(0, 1000), // Limit body size in logs
+          ip: clientIp,
+          userAgent
+        },
+        { status: 400, body: { error: 'Invalid JSON payload' } },
+        false,
+        Date.now() - startTime,
+        'JSON parsing failed'
+      )
+
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
         { status: 400 }
       )
     }
 
-    // Validate required fields
-    if (!payload.name || !payload.email) {
+    // Get webhook configuration for this tenant
+    let webhookConfig
+    try {
+      webhookConfig = await getWebhookConfig(tenantId)
+    } catch (error) {
+      await webhookLogger?.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: payload,
+          ip: clientIp,
+          userAgent
+        },
+        { status: 404, body: { error: 'Webhook not configured' } },
+        false,
+        Date.now() - startTime,
+        'Webhook configuration not found'
+      )
+
       return NextResponse.json(
-        { error: 'Missing required fields: name and email are required' },
-        { status: 400 }
+        { error: 'Webhook not configured for this tenant' },
+        { status: 404 }
       )
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(payload.email)) {
+    // Rate limiting check
+    const rateLimiter = new WebhookRateLimit()
+    const rateCheck = await rateLimiter.checkRateLimit(
+      tenantId,
+      clientIp,
+      webhookConfig.rate_limit_per_minute
+    )
+
+    if (!rateCheck.allowed) {
+      await webhookLogger?.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: payload,
+          ip: clientIp,
+          userAgent
+        },
+        { 
+          status: 429, 
+          body: { 
+            error: 'Rate limit exceeded',
+            resetTime: rateCheck.resetTime
+          }
+        },
+        false,
+        Date.now() - startTime,
+        'Rate limit exceeded'
+      )
+
       return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
+        { 
+          error: 'Rate limit exceeded',
+          message: `Too many requests. Try again after ${rateCheck.resetTime.toISOString()}`,
+          resetTime: rateCheck.resetTime.toISOString()
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': webhookConfig.rate_limit_per_minute.toString(),
+            'X-RateLimit-Remaining': rateCheck.remaining.toString(),
+            'X-RateLimit-Reset': rateCheck.resetTime.getTime().toString()
+          }
+        }
       )
     }
 
-    // Optional: Validate webhook signature (uncomment when implementing security)
-    // const webhookSecret = process.env.WEBHOOK_SECRET
-    // if (webhookSecret && signature) {
-    //   if (!validateWebhookSignature(body, signature, webhookSecret)) {
-    //     return NextResponse.json(
-    //       { error: 'Invalid webhook signature' },
-    //       { status: 401 }
-    //     )
-    //   }
-    // }
+    // Signature validation
+    let signatureValid = false
+    if (signature) {
+      signatureValid = validateWebhookSignature(
+        body,
+        signature,
+        webhookConfig.webhook_secret
+      )
+
+      if (!signatureValid) {
+        await webhookLogger?.logWebhookRequest(
+          tenantId,
+          'lead_capture',
+          {
+            method: request.method,
+            headers: Object.fromEntries(request.headers.entries()),
+            body: payload,
+            ip: clientIp,
+            userAgent
+          },
+          { status: 401, body: { error: 'Invalid webhook signature' } },
+          false,
+          Date.now() - startTime,
+          'Invalid signature'
+        )
+
+        return NextResponse.json(
+          { error: 'Invalid webhook signature' },
+          { status: 401 }
+        )
+      }
+    } else {
+      // Log warning about missing signature
+      console.warn(`Webhook received without signature from IP: ${clientIp}`)
+    }
+
+    // Validate and sanitize input data
+    const validation = WebhookValidator.validateLeadData(payload)
+    if (!validation.isValid) {
+      await webhookLogger?.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: payload,
+          ip: clientIp,
+          userAgent
+        },
+        { 
+          status: 400, 
+          body: { 
+            error: 'Validation failed',
+            details: validation.errors
+          }
+        },
+        signatureValid,
+        Date.now() - startTime,
+        `Validation failed: ${validation.errors.join(', ')}`
+      )
+
+      return NextResponse.json(
+        { 
+          error: 'Validation failed',
+          details: validation.errors
+        },
+        { status: 400 }
+      )
+    }
 
     // Transform payload to lead format
-    const leadData = transformToLead(payload)
+    const leadData = transformToLead(validation.sanitized, tenantId)
 
-    // Log the webhook for debugging
-    console.log('Webhook received:', {
-      timestamp: new Date().toISOString(),
-      source: payload.source || 'unknown',
-      email: payload.email,
-      name: payload.name,
-      ip: headersList.get('x-forwarded-for') || 'unknown'
-    })
+    // Save lead to database
+    const { data: newLead, error: dbError } = await supabase
+      .from('leads')
+      .insert(leadData)
+      .select()
+      .single()
 
-    // TODO: Save to database when Prisma is set up
-    // const newLead = await prisma.lead.create({
-    //   data: leadData
-    // })
+    if (dbError) {
+      console.error('Database error creating lead:', dbError)
+      
+      await webhookLogger?.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: payload,
+          ip: clientIp,
+          userAgent
+        },
+        { status: 500, body: { error: 'Database error' } },
+        signatureValid,
+        Date.now() - startTime,
+        `Database error: ${dbError.message}`
+      )
 
-    // Simulate database save for now
-    const mockLead = {
-      id: Date.now(),
-      ...leadData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      return NextResponse.json(
+        { 
+          error: 'Failed to save lead',
+          message: 'Database error occurred'
+        },
+        { status: 500 }
+      )
     }
 
-    console.log('Lead created:', mockLead)
-
-    // Return success response
-    return NextResponse.json({
+    // Success response
+    const responseBody = {
       success: true,
       message: 'Lead created successfully',
-      leadId: mockLead.id,
+      leadId: newLead.id,
       data: {
-        company: mockLead.companyName,
-        contact: mockLead.contactName,
-        email: mockLead.email,
-        source: mockLead.source,
-        status: mockLead.status
+        company: newLead.company_name,
+        contact: newLead.contact_name,
+        email: newLead.email,
+        source: newLead.source,
+        status: newLead.status
       }
-    }, { status: 201 })
+    }
+
+    // Log successful webhook
+    await webhookLogger?.logWebhookRequest(
+      tenantId,
+      'lead_capture',
+      {
+        method: request.method,
+        headers: Object.fromEntries(request.headers.entries()),
+        body: payload,
+        ip: clientIp,
+        userAgent
+      },
+      { status: 201, body: responseBody },
+      signatureValid,
+      Date.now() - startTime
+    )
+
+    return NextResponse.json(responseBody, { 
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': webhookConfig.rate_limit_per_minute.toString(),
+        'X-RateLimit-Remaining': rateCheck.remaining.toString(),
+        'X-RateLimit-Reset': rateCheck.resetTime.getTime().toString()
+      }
+    })
 
   } catch (error) {
     console.error('Webhook processing error:', error)
     
+    // Log error if possible
+    if (webhookLogger && tenantId) {
+      await webhookLogger.logWebhookRequest(
+        tenantId,
+        'lead_capture',
+        {
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries()),
+          body: 'Error occurred before body parsing',
+          ip: clientIp,
+          userAgent: request.headers.get('user-agent') || 'unknown'
+        },
+        { status: 500, body: { error: 'Internal server error' } },
+        false,
+        Date.now() - startTime,
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -156,22 +372,55 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Handle GET requests for testing
-export async function GET() {
-  return NextResponse.json({
-    message: 'Webhook endpoint is active',
-    endpoint: '/api/webhook/leads',
-    method: 'POST',
-    contentType: 'application/json',
-    requiredFields: ['name', 'email'],
-    optionalFields: ['phone', 'company', 'message', 'source', 'website'],
-    example: {
-      name: 'Jan Janssen',
-      email: 'jan@bakkerijjanssen.nl',
-      phone: '+31 6 1234 5678',
-      company: 'Bakkerij Janssen',
-      message: 'Interested in air conditioning for my bakery',
-      source: 'website_contact_form'
-    }
-  })
+// Handle GET requests for webhook info and testing
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const tenantId = searchParams.get('tenant')
+
+  if (!tenantId) {
+    return NextResponse.json({
+      error: 'Missing tenant parameter',
+      message: 'Include ?tenant=YOUR_TENANT_ID in the URL'
+    }, { status: 400 })
+  }
+
+  try {
+    const webhookConfig = await getWebhookConfig(tenantId)
+    
+    return NextResponse.json({
+      message: 'Webhook endpoint is active and configured',
+      tenant: tenantId,
+      endpoint: `/api/webhook/leads?tenant=${tenantId}`,
+      method: 'POST',
+      contentType: 'application/json',
+      authentication: 'X-Webhook-Signature header required',
+      rateLimit: `${webhookConfig.rate_limit_per_minute} requests per minute`,
+      requiredFields: ['name', 'email'],
+      optionalFields: ['phone', 'company', 'message', 'source', 'website', 'metadata'],
+      example: {
+        name: 'Jan Janssen',
+        email: 'jan@bakkerijjanssen.nl',
+        phone: '+31 6 1234 5678',
+        company: 'Bakkerij Janssen',
+        message: 'Interested in air conditioning for my bakery',
+        source: 'website_contact_form',
+        metadata: {
+          form_version: '2.1',
+          utm_source: 'google',
+          utm_campaign: 'summer2024'
+        }
+      },
+      signatureGeneration: {
+        algorithm: 'HMAC-SHA256',
+        secret: 'Use your webhook secret from the settings page',
+        header: 'X-Webhook-Signature',
+        format: 'sha256=HEXDIGEST'
+      }
+    })
+  } catch (error) {
+    return NextResponse.json({
+      error: 'Webhook not configured',
+      message: 'This tenant does not have webhook configuration set up'
+    }, { status: 404 })
+  }
 }
