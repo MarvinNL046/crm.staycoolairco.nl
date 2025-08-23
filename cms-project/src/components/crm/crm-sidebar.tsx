@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import {
   BarChart3,
   Building2,
@@ -151,9 +153,52 @@ const toolsItems = [
   },
 ]
 
+interface UserProfile {
+  id: string
+  email: string
+  full_name?: string
+  avatar_url?: string
+}
+
 export function CRMSidebar() {
   const { stats, loading } = useSidebarStatsContext()
   const { open } = useSidebar()
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [userLoading, setUserLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser) {
+          // Get profile data
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, avatar_url')
+            .eq('id', authUser.id)
+            .single()
+          
+          if (profile) {
+            setUser(profile)
+          } else {
+            // Fallback to auth user data
+            setUser({
+              id: authUser.id,
+              email: authUser.email || '',
+              full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User'
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error)
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    getUser()
+  }, [supabase])
 
   // Create menu items with live data
   const menuItems = menuItemsStructure.map(item => ({
@@ -311,15 +356,33 @@ export function CRMSidebar() {
           !open && "justify-center px-2"
         )}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/avatar.jpg" alt="User" />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarImage src={user?.avatar_url || undefined} alt={user?.full_name || 'User'} />
+            <AvatarFallback>
+              {userLoading ? (
+                <Skeleton className="h-full w-full rounded-full" />
+              ) : (
+                user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) :
+                user?.email ? user.email.split('@')[0].slice(0, 2).toUpperCase() : 'U'
+              )}
+            </AvatarFallback>
           </Avatar>
           {open && (
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">StayCool Admin</span>
-              <span className="truncate text-xs text-muted-foreground">
-                admin@staycoolairco.nl
-              </span>
+              {userLoading ? (
+                <>
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <Skeleton className="h-3 w-32" />
+                </>
+              ) : (
+                <>
+                  <span className="truncate font-semibold">
+                    {user?.full_name || user?.email?.split('@')[0] || 'User'}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user?.email || 'Geen email'}
+                  </span>
+                </>
+              )}
             </div>
           )}
         </div>
