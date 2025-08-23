@@ -89,7 +89,7 @@ export default function DocsPage() {
       <div className="flex-1 overflow-auto">
         <ScrollArea className="h-full">
           <div className="container max-w-4xl py-8">
-            {activeSection === "getting-started" && <GettingStartedSection />}
+            {activeSection === "getting-started" && <GettingStartedSection setActiveSection={setActiveSection} />}
             {activeSection === "leads" && <LeadsSection />}
             {activeSection === "contacts" && <ContactsSection />}
             {activeSection === "invoicing" && <InvoicingSection />}
@@ -104,7 +104,7 @@ export default function DocsPage() {
   )
 }
 
-function GettingStartedSection() {
+function GettingStartedSection({ setActiveSection }: { setActiveSection: (section: string) => void }) {
   return (
     <>
       <div className="mb-8">
@@ -258,7 +258,7 @@ function LeadsSection() {
                   <span className="text-sm">Onderhandelen over voorwaarden</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant="success">Gewonnen</Badge>
+                  <Badge className="bg-green-100 text-green-800">Gewonnen</Badge>
                   <span className="text-sm">Deal gesloten!</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -714,7 +714,7 @@ function InvoicingSection() {
                   <span className="text-sm text-muted-foreground">Wacht op betaling</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="success">Betaald</Badge>
+                  <Badge className="bg-green-100 text-green-800">Betaald</Badge>
                   <span className="text-sm text-muted-foreground">Betaling ontvangen</span>
                 </div>
                 <div className="flex items-center gap-2">

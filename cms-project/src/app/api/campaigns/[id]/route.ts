@@ -29,7 +29,7 @@ export async function GET(
       const { data: recipientStats } = await supabase
         .from('campaign_recipients')
         .select('status')
-        .eq('campaign_id', params.id)
+        .eq('campaign_id', id)
 
       if (recipientStats) {
         const stats = {

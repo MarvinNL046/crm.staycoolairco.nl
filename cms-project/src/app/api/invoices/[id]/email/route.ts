@@ -174,7 +174,7 @@ async function generateInvoicePDF(invoice: any): Promise<Buffer> {
 
   await browser.close();
   
-  return pdf;
+  return Buffer.from(pdf);
 }
 
 // Helper functions
@@ -219,9 +219,9 @@ function replaceTemplateVariables(template: string, data: any): string {
     const items = data[key];
     if (!Array.isArray(items)) return '';
     
-    return items.map(item => {
+    return items.map((item: any) => {
       let itemHtml = itemTemplate;
-      itemHtml = itemHtml.replace(/\{\{(\w+)\}\}/g, (match, prop) => {
+      itemHtml = itemHtml.replace(/\{\{(\w+)\}\}/g, (match: string, prop: string) => {
         return item[prop] !== undefined ? item[prop] : '';
       });
       return itemHtml;

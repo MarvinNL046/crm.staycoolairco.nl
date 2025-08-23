@@ -60,7 +60,7 @@ export async function GET(
       totalAmount: formatCurrency(invoice.total_amount),
       notes: invoice.notes,
       paymentTerms: invoice.payment_terms || '30 dagen netto',
-      items: invoice.invoice_items?.map(item => ({
+      items: invoice.invoice_items?.map((item: any) => ({
         name: item.name,
         description: item.description,
         quantity: item.quantity,
@@ -100,7 +100,7 @@ export async function GET(
     // Return PDF
     const filename = `${invoice.invoice_type}_${invoice.invoice_number}.pdf`;
     
-    return new NextResponse(pdf, {
+    return new NextResponse(Buffer.from(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
@@ -156,10 +156,10 @@ function replaceTemplateVariables(template: string, data: any): string {
     const items = data[key];
     if (!Array.isArray(items)) return '';
     
-    return items.map(item => {
+    return items.map((item: any) => {
       let itemHtml = itemTemplate;
       // Replace item properties
-      itemHtml = itemHtml.replace(/\{\{(\w+)\}\}/g, (match, prop) => {
+      itemHtml = itemHtml.replace(/\{\{(\w+)\}\}/g, (match: string, prop: string) => {
         return item[prop] !== undefined ? item[prop] : '';
       });
       return itemHtml;

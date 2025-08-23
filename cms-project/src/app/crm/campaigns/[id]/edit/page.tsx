@@ -50,7 +50,6 @@ interface Campaign {
 
 export default function EditCampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { id } = use(params)
   const router = useRouter()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)

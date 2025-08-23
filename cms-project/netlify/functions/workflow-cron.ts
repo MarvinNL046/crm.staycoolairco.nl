@@ -69,12 +69,4 @@ export async function GET(request: NextRequest) {
   // Call workflow execute API
   // ... same logic as above
 }
-
-// En in vercel.json:
-{
-  "crons": [{
-    "path": "/api/cron/workflow",
-    "schedule": "*/5 * * * *"
-  }]
-}
 */

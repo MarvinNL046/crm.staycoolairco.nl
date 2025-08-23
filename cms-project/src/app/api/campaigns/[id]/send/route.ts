@@ -44,7 +44,7 @@ export async function POST(
     }
 
     // Get recipients based on segment
-    let recipients = []
+    let recipients: any[] = []
     const tenantId = campaign.tenant_id
 
     if (campaign.segment_type === 'all' || campaign.segment_type === 'leads') {
@@ -97,7 +97,7 @@ export async function POST(
 
     // Create recipient records
     const recipientRecords = uniqueRecipients.map(recipient => ({
-      campaign_id: params.id,
+      campaign_id: id,
       ...recipient,
       status: 'pending',
       created_at: new Date().toISOString()

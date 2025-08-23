@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       dueDate: invoice.due_date,
       paidDate: invoice.paid_date,
       quoteValidUntil: invoice.quote_valid_until,
-      items: invoice.invoice_items?.map(item => ({
+      items: invoice.invoice_items?.map((item: any) => ({
         id: item.id,
         description: `${item.name}${item.description ? ` - ${item.description}` : ''}`,
         quantity: item.quantity,

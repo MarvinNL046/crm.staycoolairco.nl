@@ -60,7 +60,7 @@ export async function GET(
       contactId: invoice.contact_id,
       leadId: invoice.lead_id,
       tenantId: invoice.tenant_id,
-      items: invoice.invoice_items?.map(item => ({
+      items: invoice.invoice_items?.map((item: any) => ({
         id: item.id,
         name: item.name,
         description: item.description,

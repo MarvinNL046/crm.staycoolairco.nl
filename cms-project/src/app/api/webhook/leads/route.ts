@@ -55,7 +55,7 @@ function transformToLead(payload: WebhookPayload) {
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const signature = headersList.get('x-webhook-signature')
     const contentType = headersList.get('content-type')
     

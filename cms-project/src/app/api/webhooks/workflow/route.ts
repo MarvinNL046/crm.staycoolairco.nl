@@ -64,6 +64,10 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
     
+    // Get headers once before mapping
+    const headersList = await headers();
+    const headerEntries = Object.fromEntries(headersList.entries());
+    
     // Queue workflow executions
     const queuePromises = workflows.map(workflow => 
       supabase
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
           trigger_data: {
             webhook_data: data,
             webhook_key: webhookKey,
-            headers: Object.fromEntries(headers().entries()),
+            headers: headerEntries,
             triggered_at: new Date().toISOString()
           }
         })

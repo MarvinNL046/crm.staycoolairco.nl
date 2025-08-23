@@ -88,7 +88,7 @@ const categoryLabels = {
 const statusConfig = {
   pending: { label: 'In afwachting', variant: 'secondary' as const, icon: Clock },
   approved: { label: 'Goedgekeurd', variant: 'default' as const, icon: CheckCircle },
-  paid: { label: 'Betaald', variant: 'success' as const, icon: CheckCircle },
+  paid: { label: 'Betaald', variant: 'default' as const, icon: CheckCircle },
   rejected: { label: 'Afgewezen', variant: 'destructive' as const, icon: XCircle }
 }
 

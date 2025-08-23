@@ -77,14 +77,14 @@ interface Invoice {
   taxAmount: number
   currency: string
   issueDate: string
-  dueDate: string | null
-  paidDate: string | null
-  quoteValidUntil?: string | null
+  dueDate?: string
+  paidDate?: string
+  quoteValidUntil?: string
   items: InvoiceItem[]
   notes?: string
   paymentTerms?: string
-  customerName?: string
-  customerEmail?: string
+  customerName: string
+  customerEmail: string
   customerPhone?: string
   customerCompany?: string
   billingAddressLine1?: string
@@ -93,10 +93,10 @@ interface Invoice {
   billingState?: string
   billingPostalCode?: string
   billingCountry?: string
-  taxRate?: number
+  taxRate: number
   discountAmount?: number
   discountPercentage?: number
-  totalAmount?: number
+  totalAmount: number
   internalNotes?: string
   paymentMethod?: string
 }
