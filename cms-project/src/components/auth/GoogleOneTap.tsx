@@ -136,7 +136,7 @@ export function GoogleOneTap({
     <Script 
       src="https://accounts.google.com/gsi/client" 
       strategy="afterInteractive"
-      onReady={initializeGoogleOneTap}
+      onReady={() => { initializeGoogleOneTap() }}
     />
   )
 }

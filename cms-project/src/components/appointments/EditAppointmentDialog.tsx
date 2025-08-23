@@ -35,20 +35,7 @@ import { Calendar } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-
-interface Appointment {
-  id: string;
-  title: string;
-  description: string;
-  start_time: string;
-  end_time: string;
-  customer_id: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
-  location?: string;
-  customer?: {
-    name: string;
-  };
-}
+import { Appointment } from '@/types/appointments';
 
 interface EditAppointmentDialogProps {
   appointment: Appointment | null;
@@ -75,7 +62,7 @@ export function EditAppointmentDialog({
     start_time: '',
     end_time: '',
     location: '',
-    status: 'scheduled' as const,
+    status: 'scheduled' as 'scheduled' | 'completed' | 'cancelled' | 'no-show',
   });
 
   useEffect(() => {
@@ -87,7 +74,7 @@ export function EditAppointmentDialog({
       setFormData({
         title: appointment.title,
         description: appointment.description || '',
-        customer_id: appointment.customer_id,
+        customer_id: appointment.customer_id || '',
         start_date: startDate,
         start_time: startTime,
         end_time: endTime,
@@ -302,7 +289,7 @@ export function EditAppointmentDialog({
                     <SelectItem value="scheduled">Gepland</SelectItem>
                     <SelectItem value="completed">Voltooid</SelectItem>
                     <SelectItem value="cancelled">Geannuleerd</SelectItem>
-                    <SelectItem value="rescheduled">Verzet</SelectItem>
+                    <SelectItem value="no-show">Niet verschenen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

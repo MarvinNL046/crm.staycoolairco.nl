@@ -1,0 +1,351 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { SubscriptionEditModal } from '@/components/super-admin/subscription-edit-modal'
+import { 
+  CreditCard, 
+  Users, 
+  TrendingUp, 
+  Calendar,
+  DollarSign,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Building2
+} from 'lucide-react'
+
+interface Tenant {
+  id: string
+  name: string
+  domain: string
+  subscription_plan?: string
+  subscription_status?: string
+  monthly_price?: string
+  max_users?: number
+  max_leads?: number
+  subscription_ends_at?: string
+  profiles?: { count: number }[]
+}
+
+interface Stats {
+  total_revenue: number
+  active_subscriptions: number
+  total_tenants: number
+  expiring_soon: number
+  plan_distribution: {
+    free: number
+    starter: number
+    professional: number
+    enterprise: number
+  }
+}
+
+interface SubscriptionsClientProps {
+  initialTenants: Tenant[]
+  initialStats: Stats
+}
+
+export function SubscriptionsClient({ initialTenants, initialStats }: SubscriptionsClientProps) {
+  const [tenants, setTenants] = useState(initialTenants)
+  const [stats, setStats] = useState(initialStats)
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const subscriptionPlans = [
+    { name: 'Free', price: 0, maxUsers: 1, maxLeads: 100, color: 'gray' },
+    { name: 'Starter', price: 19.99, maxUsers: 3, maxLeads: 500, color: 'blue' },
+    { name: 'Professional', price: 49.99, maxUsers: 10, maxLeads: 2000, color: 'green' },
+    { name: 'Enterprise', price: 99.99, maxUsers: 50, maxLeads: 10000, color: 'purple' },
+  ]
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800 border-green-200'
+      case 'trial': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'expired': return 'bg-red-100 text-red-800 border-red-200'
+      case 'cancelled': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'suspended': return 'bg-orange-100 text-orange-800 border-orange-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'trial': return <Clock className="h-4 w-4 text-blue-600" />
+      case 'expired': return <AlertCircle className="h-4 w-4 text-red-600" />
+      case 'cancelled': return <AlertCircle className="h-4 w-4 text-gray-600" />
+      case 'suspended': return <AlertCircle className="h-4 w-4 text-orange-600" />
+      default: return <Clock className="h-4 w-4 text-gray-600" />
+    }
+  }
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'free': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'starter': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'professional': return 'bg-green-100 text-green-800 border-green-200'
+      case 'enterprise': return 'bg-purple-100 text-purple-800 border-purple-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount)
+  }
+
+  const getDaysUntilExpiry = (endDate: string | undefined) => {
+    if (!endDate) return null
+    const end = new Date(endDate)
+    const now = new Date()
+    const days = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    return days
+  }
+
+  const handleEditSubscription = (tenant: Tenant) => {
+    setSelectedTenant(tenant)
+    setIsEditModalOpen(true)
+  }
+
+  const handleSubscriptionUpdated = async () => {
+    // Refresh data after update
+    setLoading(true)
+    try {
+      const response = await fetch('/api/super-admin/subscriptions')
+      if (response.ok) {
+        const data = await response.json()
+        setTenants(data.tenants)
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    }
+    setLoading(false)
+    setIsEditModalOpen(false)
+    setSelectedTenant(null)
+  }
+
+  return (
+    <>
+      {/* Revenue Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Maandelijkse Omzet
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatCurrency(stats.total_revenue)}
+            </div>
+            <p className="text-sm text-gray-600">Actieve abonnementen</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Actieve Abonnementen
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{stats.active_subscriptions}</div>
+            <p className="text-sm text-gray-600">Van {stats.total_tenants} totaal</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Verlopen Binnenkort
+            </CardTitle>
+            <AlertCircle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{stats.expiring_soon}</div>
+            <p className="text-sm text-gray-600">Binnen 30 dagen</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Gemiddelde Waarde
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatCurrency(stats.total_revenue / (stats.active_subscriptions || 1))}
+            </div>
+            <p className="text-sm text-gray-600">Per abonnement</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Subscription Plans Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Beschikbare Plannen
+          </CardTitle>
+          <CardDescription>
+            Overzicht van alle subscription plannen
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {subscriptionPlans.map((plan) => (
+              <div key={plan.name} className="border border-gray-200 rounded-lg p-4 text-center">
+                <h3 className="font-semibold text-lg text-gray-900">{plan.name}</h3>
+                <div className="text-3xl font-bold text-gray-900 my-2">
+                  {formatCurrency(plan.price)}
+                </div>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>{plan.maxUsers} gebruikers</p>
+                  <p>{plan.maxLeads} leads</p>
+                </div>
+                <div className="mt-3">
+                  <Badge className={`${plan.color === 'gray' ? 'bg-gray-100 text-gray-800' : 
+                    plan.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                    plan.color === 'green' ? 'bg-green-100 text-green-800' :
+                    'bg-purple-100 text-purple-800'}`}>
+                    {stats.plan_distribution[plan.name.toLowerCase() as keyof typeof stats.plan_distribution]} klanten
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tenant Subscriptions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Tenant Abonnementen
+          </CardTitle>
+          <CardDescription>
+            Beheer abonnementen van alle tenants
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {tenants && tenants.length > 0 ? (
+              tenants.map((tenant) => {
+                const daysUntilExpiry = getDaysUntilExpiry(tenant.subscription_ends_at)
+                const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 30 && daysUntilExpiry > 0
+                const userCount = tenant.profiles?.[0]?.count || 0
+                
+                return (
+                  <div key={tenant.id} className={`p-4 border rounded-lg hover:bg-gray-50 transition-colors ${
+                    isExpiringSoon ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-medium text-gray-900">{tenant.name}</h4>
+                          <Badge className={getPlanColor(tenant.subscription_plan || 'free')}>
+                            {tenant.subscription_plan || 'free'}
+                          </Badge>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(tenant.subscription_status || 'active')}
+                            <Badge className={getStatusColor(tenant.subscription_status || 'active')}>
+                              {tenant.subscription_status || 'active'}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Maandprijs:</span>
+                            <p className="font-medium">{formatCurrency(parseFloat(tenant.monthly_price || '0'))}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Gebruikers:</span>
+                            <p className="font-medium">{userCount} / {tenant.max_users || 1}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Verloopt op:</span>
+                            <p className="font-medium">
+                              {tenant.subscription_ends_at 
+                                ? new Date(tenant.subscription_ends_at).toLocaleDateString('nl-NL')
+                                : 'Onbeperkt'
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Status:</span>
+                            <p className={`font-medium ${
+                              isExpiringSoon ? 'text-orange-600' : 
+                              daysUntilExpiry && daysUntilExpiry < 0 ? 'text-red-600' : 'text-green-600'
+                            }`}>
+                              {daysUntilExpiry === null ? 'Actief' :
+                               daysUntilExpiry < 0 ? 'Verlopen' :
+                               daysUntilExpiry === 0 ? 'Verloopt vandaag' :
+                               `${daysUntilExpiry} dagen resterend`
+                              }
+                            </p>
+                          </div>
+                        </div>
+
+                        {isExpiringSoon && (
+                          <div className="mt-3 p-2 bg-orange-100 border border-orange-200 rounded text-sm text-orange-800">
+                            ⚠️ Dit abonnement verloopt binnenkort. Neem contact op met de klant voor verlenging.
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 ml-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditSubscription(tenant)}
+                          disabled={loading}
+                        >
+                          Bewerken
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Facturen
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-12">
+                <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">Geen abonnementen gevonden</h3>
+                <p className="mt-2 text-gray-600">Er zijn nog geen actieve abonnementen.</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Edit Modal */}
+      <SubscriptionEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedTenant(null)
+        }}
+        tenant={selectedTenant}
+        onSave={handleSubscriptionUpdated}
+      />
+    </>
+  )
+}

@@ -3,16 +3,23 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { MessageBird } from 'messagebird';
+const messagebird = require('messagebird');
 
-// Initialize services
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY! // Service key voor server-side
-);
+// Initialize services lazily to avoid build-time issues
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY! // Service key voor server-side
+  );
+}
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const messagebird = MessageBird(process.env.MESSAGEBIRD_API_KEY);
+function getResendClient() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
+
+function getMessageBirdClient() {
+  return messagebird(process.env.MESSAGEBIRD_API_KEY);
+}
 
 // Types
 interface WorkflowExecution {
@@ -35,7 +42,7 @@ export class WorkflowExecutor {
     console.log(`[Executor] Starting workflow ${workflowId}`, triggerData);
     
     // Get workflow definition
-    const { data: workflow, error } = await supabase
+    const { data: workflow, error } = await getSupabaseClient()
       .from('workflows')
       .select('*')
       .eq('id', workflowId)
@@ -47,7 +54,7 @@ export class WorkflowExecutor {
     }
     
     // Create execution record
-    const { data: execution, error: execError } = await supabase
+    const { data: execution, error: execError } = await getSupabaseClient()
       .from('workflow_executions')
       .insert({
         workflow_id: workflowId,
@@ -98,7 +105,7 @@ export class WorkflowExecutor {
     }
     
     // Mark as completed
-    await supabase
+    await getSupabaseClient()
       .from('workflow_executions')
       .update({
         status: 'completed',
@@ -140,14 +147,14 @@ export class WorkflowExecutor {
       const html = this.replaceVariables(data.body || '', context);
       const subject = this.replaceVariables(data.subject || '', context);
       
-      const result = await resend.emails.send({
+      const result = await getResendClient().emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'noreply@example.com',
         to: context.lead?.email || data.to,
         subject,
         html
       });
       
-      return { success: true, data: { emailId: result.id } };
+      return { success: true, data: { emailId: result.data?.id } };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
@@ -157,7 +164,7 @@ export class WorkflowExecutor {
     try {
       const message = this.replaceVariables(data.message || '', context);
       
-      const result = await messagebird.messages.create({
+      const result = await getMessageBirdClient().messages.create({
         originator: process.env.MESSAGEBIRD_ORIGINATOR || 'CRM',
         recipients: [context.lead?.phone || data.to],
         body: message
@@ -174,7 +181,7 @@ export class WorkflowExecutor {
       const title = this.replaceVariables(data.title || '', context);
       const description = this.replaceVariables(data.description || '', context);
       
-      const { error } = await supabase
+      const { error } = await getSupabaseClient()
         .from('tasks')
         .insert({
           title,
@@ -199,7 +206,7 @@ export class WorkflowExecutor {
       
       if (data.status) updates.status = data.status;
       if (data.score_change) {
-        const { data: lead } = await supabase
+        const { data: lead } = await getSupabaseClient()
           .from('leads')
           .select('score')
           .eq('id', context.lead.id)
@@ -208,7 +215,7 @@ export class WorkflowExecutor {
         updates.score = (lead?.score || 0) + data.score_change;
       }
       
-      const { error } = await supabase
+      const { error } = await getSupabaseClient()
         .from('leads')
         .update(updates)
         .eq('id', context.lead.id);
@@ -310,7 +317,7 @@ export class WorkflowExecutor {
   async scheduleNextStep(executionId: string, nextNodeId: string, delay: string, context: any) {
     const runAt = this.calculateDueDate(delay);
     
-    await supabase
+    await getSupabaseClient()
       .from('workflow_scheduled_jobs')
       .insert({
         execution_id: executionId,
@@ -321,7 +328,7 @@ export class WorkflowExecutor {
   }
   
   async failExecution(executionId: string, error: string) {
-    await supabase
+    await getSupabaseClient()
       .from('workflow_executions')
       .update({
         status: 'failed',

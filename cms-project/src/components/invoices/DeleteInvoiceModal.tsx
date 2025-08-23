@@ -13,8 +13,11 @@ interface Invoice {
   invoiceNumber: string
   type: 'invoice' | 'quote'
   status: string
-  client: string
-  total: number
+  client?: string
+  customerName?: string
+  customerCompany?: string
+  total?: number
+  totalAmount?: number
 }
 
 interface DeleteInvoiceModalProps {
@@ -84,11 +87,11 @@ export function DeleteInvoiceModal({ invoice, open, onClose, onDelete }: DeleteI
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Client:</span>
-              <span>{invoice.client}</span>
+              <span>{invoice.client || invoice.customerCompany || invoice.customerName}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Amount:</span>
-              <span className="font-bold">{formatCurrency(invoice.total)}</span>
+              <span className="font-bold">{formatCurrency(invoice.totalAmount || invoice.total || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Status:</span>

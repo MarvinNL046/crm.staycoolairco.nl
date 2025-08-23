@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes configuration
   const protectedRoutes = ['/admin', '/crm']
+  const superAdminRoutes = ['/super-admin']
   const authRoutes = ['/auth/login', '/auth/signup', '/auth/reset-password']
   const publicRoutes = ['/', '/auth/callback', '/auth/auth-code-error']
   
@@ -47,11 +48,27 @@ export async function middleware(request: NextRequest) {
 
   // Check if the path starts with any protected route
   const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
+  const isSuperAdminRoute = superAdminRoutes.some(route => path.startsWith(route))
   const isAuthRoute = authRoutes.some(route => path.startsWith(route))
   const isPublicRoute = publicRoutes.includes(path)
 
+  // Super admin route protection
+  if (isSuperAdminRoute && user) {
+    // Check if user is super admin
+    const { data: superAdmin } = await supabase
+      .from('super_admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!superAdmin) {
+      // Not a super admin, redirect to regular CRM
+      return NextResponse.redirect(new URL('/crm', request.url))
+    }
+  }
+
   // Redirect to login if accessing protected route without authentication
-  if (isProtectedRoute && !user) {
+  if ((isProtectedRoute || isSuperAdminRoute) && !user) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('next', path)
     return NextResponse.redirect(redirectUrl)
@@ -59,7 +76,15 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to dashboard if accessing auth routes while authenticated
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/crm', request.url))
+    // Check if user is super admin to redirect to appropriate dashboard
+    const { data: superAdmin } = await supabase
+      .from('super_admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
+    
+    const dashboardUrl = superAdmin ? '/super-admin' : '/crm'
+    return NextResponse.redirect(new URL(dashboardUrl, request.url))
   }
 
   // Special handling for update-password route - must be authenticated

@@ -13,9 +13,12 @@ interface Invoice {
   invoiceNumber: string
   type: 'invoice' | 'quote'
   status: string
-  client: string
-  contact: string
-  total: number
+  client?: string
+  contact?: string
+  customerName?: string
+  customerCompany?: string
+  total?: number
+  totalAmount?: number
 }
 
 interface ConvertQuoteModalProps {
@@ -92,10 +95,10 @@ export function ConvertQuoteModal({ quote, open, onClose, onConverted }: Convert
               <FileText className="h-8 w-8 text-blue-500" />
               <div className="flex-1">
                 <div className="font-medium text-lg">{quote.invoiceNumber}</div>
-                <div className="text-sm text-gray-600">{quote.client}</div>
+                <div className="text-sm text-gray-600">{quote.client || quote.customerCompany || quote.customerName}</div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-lg">{formatCurrency(quote.total)}</div>
+                <div className="font-bold text-lg">{formatCurrency(quote.totalAmount || quote.total || 0)}</div>
                 <div className="text-sm text-gray-600 capitalize">{quote.status}</div>
               </div>
             </div>

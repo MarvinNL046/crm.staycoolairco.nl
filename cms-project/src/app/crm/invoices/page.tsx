@@ -57,32 +57,25 @@ import { toast } from "sonner"
 
 interface InvoiceItem {
   id?: string
+  name: string
   description: string
   quantity: number
   unitPrice: number
+  subtotal: number
+  taxRate: number
+  taxAmount: number
+  discountAmount?: number
+  discountPercentage?: number
   total: number
+  position?: number
+  productId?: string
 }
 
 interface Invoice {
   id: string
   invoiceNumber: string
-  title: string
   type: 'invoice' | 'quote'
-  status: 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'cancelled' | 'converted' | 'accepted'
-  client: string
-  contact: string
-  email: string
-  total: number
-  subtotal: number
-  taxAmount: number
-  currency: string
-  issueDate: string
-  dueDate?: string
-  paidDate?: string
-  quoteValidUntil?: string
-  items: InvoiceItem[]
-  notes?: string
-  paymentTerms?: string
+  status: 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'cancelled' | 'accepted' | 'converted'
   customerName: string
   customerEmail: string
   customerPhone?: string
@@ -93,12 +86,28 @@ interface Invoice {
   billingState?: string
   billingPostalCode?: string
   billingCountry?: string
+  issueDate: string
+  dueDate?: string
+  quoteValidUntil?: string
+  paidDate?: string
+  currency: string
+  subtotal: number
   taxRate: number
+  taxAmount: number
   discountAmount?: number
   discountPercentage?: number
   totalAmount: number
+  notes?: string
   internalNotes?: string
+  paymentTerms?: string
   paymentMethod?: string
+  items: InvoiceItem[]
+  // Legacy properties for compatibility with existing code
+  title?: string
+  client?: string
+  contact?: string
+  email?: string
+  total?: number
 }
 
 const statusConfig = {
@@ -165,11 +174,13 @@ export default function InvoicesPageRealData() {
     // Then filter by search query
     const matchesSearch = !searchQuery || 
       invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (invoice.customerCompany && invoice.customerCompany.toLowerCase().includes(searchQuery.toLowerCase()))
+      (invoice.client && invoice.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.contact && invoice.contact.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.email && invoice.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.title && invoice.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.customerName && invoice.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.customerCompany && invoice.customerCompany.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (invoice.customerEmail && invoice.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
     
     return matchesTab && matchesSearch
   })
@@ -262,10 +273,12 @@ export default function InvoicesPageRealData() {
         inv.id === updatedInvoice.id ? {
           ...inv,
           ...updatedInvoice,
+          // Ensure legacy properties are populated for compatibility
           client: updatedInvoice.customerCompany || updatedInvoice.customerName || inv.client,
           contact: updatedInvoice.customerName || inv.contact,
           email: updatedInvoice.customerEmail || inv.email,
-          total: updatedInvoice.totalAmount || updatedInvoice.total || inv.total
+          total: updatedInvoice.totalAmount || updatedInvoice.total || inv.total,
+          title: updatedInvoice.title || inv.title
         } : inv
       )
     )
@@ -314,7 +327,7 @@ export default function InvoicesPageRealData() {
   const stats = {
     totalOutstanding: invoices
       .filter(inv => inv.type === 'invoice' && ['sent', 'overdue'].includes(inv.status))
-      .reduce((sum, inv) => sum + inv.total, 0),
+      .reduce((sum, inv) => sum + (inv.totalAmount || inv.total || 0), 0),
     thisMonth: invoices
       .filter(inv => {
         const issueDate = new Date(inv.issueDate)
@@ -324,13 +337,13 @@ export default function InvoicesPageRealData() {
                issueDate.getMonth() === now.getMonth() && 
                issueDate.getFullYear() === now.getFullYear()
       })
-      .reduce((sum, inv) => sum + inv.total, 0),
+      .reduce((sum, inv) => sum + (inv.totalAmount || inv.total || 0), 0),
     overdue: invoices
       .filter(inv => inv.type === 'invoice' && inv.status === 'overdue')
-      .reduce((sum, inv) => sum + inv.total, 0),
+      .reduce((sum, inv) => sum + (inv.totalAmount || inv.total || 0), 0),
     pendingQuotes: invoices
       .filter(inv => inv.type === 'quote' && ['sent', 'draft'].includes(inv.status))
-      .reduce((sum, inv) => sum + inv.total, 0),
+      .reduce((sum, inv) => sum + (inv.totalAmount || inv.total || 0), 0),
     overdueCount: invoices.filter(inv => inv.type === 'invoice' && inv.status === 'overdue').length,
     pendingQuotesCount: invoices.filter(inv => inv.type === 'quote' && ['sent', 'draft'].includes(inv.status)).length
   }
@@ -539,13 +552,13 @@ export default function InvoicesPageRealData() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{invoice.client}</div>
-                              <div className="text-sm text-muted-foreground">{invoice.contact}</div>
+                              <div className="font-medium">{invoice.client || invoice.customerCompany || invoice.customerName}</div>
+                              <div className="text-sm text-muted-foreground">{invoice.contact || invoice.customerName}</div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="max-w-xs truncate" title={invoice.title}>
-                              {invoice.title}
+                            <div className="max-w-xs truncate" title={invoice.title || `${invoice.type} for ${invoice.customerName}`}>
+                              {invoice.title || `${invoice.type} for ${invoice.customerName}`}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -557,7 +570,7 @@ export default function InvoicesPageRealData() {
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">
-                            {formatCurrency(invoice.total)}
+                            {formatCurrency(invoice.totalAmount || invoice.total || 0)}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {formatDate(invoice.issueDate)}
