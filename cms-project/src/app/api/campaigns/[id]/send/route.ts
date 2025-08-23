@@ -18,7 +18,7 @@ export async function POST(
     const { data: campaign, error: campaignError } = await supabase
       .from('campaigns')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (campaignError || !campaign) {
@@ -143,14 +143,14 @@ export async function POST(
             open_rate: 60,
             click_rate: 28
           })
-          .eq('id', params.id)
+          .eq('id', id)
       }, 5000)
     }
 
     const { data: updatedCampaign, error: updateError } = await supabase
       .from('campaigns')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 

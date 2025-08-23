@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,9 @@ interface Campaign {
   recipient_count: number
 }
 
-export default function EditCampaignPage({ params }: { params: { id: string } }) {
+export default function EditCampaignPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const { id } = use(params)
   const router = useRouter()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,11 +60,11 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     fetchCampaign()
-  }, [params.id])
+  }, [id])
 
   const fetchCampaign = async () => {
     try {
-      const response = await fetch(`/api/campaigns/${params.id}`)
+      const response = await fetch(`/api/campaigns/${id}`)
       const data = await response.json()
       
       if (data.campaign) {
@@ -80,7 +82,7 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
     setSaving(true)
 
     try {
-      const response = await fetch(`/api/campaigns/${params.id}`, {
+      const response = await fetch(`/api/campaigns/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,7 +124,7 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
         body.schedule_at = tomorrow.toISOString()
       }
 
-      const response = await fetch(`/api/campaigns/${params.id}/send`, {
+      const response = await fetch(`/api/campaigns/${id}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

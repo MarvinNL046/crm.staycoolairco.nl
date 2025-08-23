@@ -52,18 +52,19 @@ interface Campaign {
   bounce_rate: number
 }
 
-export default function CampaignDetailPage({ params }: { params: { id: string } }) {
+export default function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchCampaign()
-  }, [params.id])
+  }, [id])
 
   const fetchCampaign = async () => {
     try {
-      const response = await fetch(`/api/campaigns/${params.id}`)
+      const response = await fetch(`/api/campaigns/${id}`)
       const data = await response.json()
       
       if (data.campaign) {

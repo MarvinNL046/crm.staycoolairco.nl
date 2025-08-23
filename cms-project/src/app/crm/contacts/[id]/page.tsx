@@ -51,6 +51,7 @@ const relationshipConfig = {
 }
 
 export default function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
