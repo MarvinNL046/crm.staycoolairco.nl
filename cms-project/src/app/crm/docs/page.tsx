@@ -39,7 +39,13 @@ import {
   Database,
   Key,
   RefreshCw,
-  ArrowRight
+  ArrowRight,
+  Webhook,
+  Copy,
+  Code,
+  Lock,
+  Server,
+  ExternalLink
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -53,6 +59,7 @@ export default function DocsPage() {
     { id: "contacts", title: "Contacten", icon: Users },
     { id: "invoicing", title: "Facturatie", icon: FileText },
     { id: "automation", title: "Workflow Automation", icon: Zap },
+    { id: "webhooks", title: "Webhook Integratie", icon: Globe },
     { id: "analytics", title: "Analytics & Rapporten", icon: BarChart3 },
     { id: "settings", title: "Instellingen", icon: Settings },
     { id: "faq", title: "Veelgestelde vragen", icon: HelpCircle },
@@ -94,6 +101,7 @@ export default function DocsPage() {
             {activeSection === "contacts" && <ContactsSection />}
             {activeSection === "invoicing" && <InvoicingSection />}
             {activeSection === "automation" && <AutomationSection />}
+            {activeSection === "webhooks" && <WebhooksSection />}
             {activeSection === "analytics" && <AnalyticsSection />}
             {activeSection === "settings" && <SettingsSection />}
             {activeSection === "faq" && <FAQSection />}
@@ -1028,6 +1036,322 @@ function AutomationSection() {
   )
 }
 
+function WebhooksSection() {
+  return (
+    <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Webhook Integratie</h1>
+        <p className="text-muted-foreground mt-2">
+          Ontvang automatisch leads van je website formulieren
+        </p>
+      </div>
+
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Webhook className="h-5 w-5 text-primary" />
+              Wat zijn webhooks?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Webhooks zijn automatische berichten die je website naar je CRM stuurt wanneer 
+              iemand een formulier invult. Zo komen nieuwe leads direct in je CRM zonder handmatig werk.
+            </p>
+            
+            <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+              <div className="flex gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">Automatische lead import</p>
+                  <p className="text-muted-foreground mt-1">
+                    Elke keer als iemand je contactformulier invult, wordt automatisch een nieuwe lead aangemaakt
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Webhook instellen in 3 stappen</CardTitle>
+            <CardDescription>Verbind je website formulieren met StayCool CRM</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground shrink-0">1</span>
+                <div className="flex-1">
+                  <h4 className="font-medium">Ga naar Instellingen → Webhooks</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Hier vind je je unieke webhook URL en secret key
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground shrink-0">2</span>
+                <div className="flex-1">
+                  <h4 className="font-medium">Kopieer de webhook URL</h4>
+                  <div className="mt-2 rounded-lg border bg-muted/50 p-3 font-mono text-xs">
+                    https://crm.staycoolairco.nl/api/webhook/leads?tenant=JOUW_TENANT_ID
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Klik op <Copy className="inline h-3 w-3" /> om te kopiëren
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground shrink-0">3</span>
+                <div className="flex-1">
+                  <h4 className="font-medium">Implementeer op je website</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Gebruik de voorbeeldcode (PHP, Node.js of cURL) om je formulier te koppelen
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="setup" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="setup">Setup</TabsTrigger>
+            <TabsTrigger value="security">Beveiliging</TabsTrigger>
+            <TabsTrigger value="testing">Testen</TabsTrigger>
+            <TabsTrigger value="examples">Voorbeelden</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="setup" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Webhook configuratie</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-medium">Vereiste velden</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Deze velden moet je minimaal meesturen:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-4">
+                    <li><code className="font-mono bg-muted px-1">name</code> - Naam van de lead</li>
+                    <li><code className="font-mono bg-muted px-1">email</code> - Email adres</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Optionele velden</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-4">
+                    <li><code className="font-mono bg-muted px-1">phone</code> - Telefoonnummer</li>
+                    <li><code className="font-mono bg-muted px-1">company</code> - Bedrijfsnaam</li>
+                    <li><code className="font-mono bg-muted px-1">message</code> - Bericht/notities</li>
+                    <li><code className="font-mono bg-muted px-1">source</code> - Bron (bijv. "website", "landing_page")</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                  <div className="flex gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-yellow-900">Content-Type header</p>
+                      <p className="text-yellow-700 mt-1">
+                        Vergeet niet <code className="font-mono bg-yellow-100 px-1">Content-Type: application/json</code> mee te sturen
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Webhook beveiliging
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border-2 border-red-200 bg-red-50 p-4">
+                  <div className="flex gap-2">
+                    <Shield className="h-5 w-5 text-red-600 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-red-900">Belangrijk: Gebruik server-side code!</p>
+                      <p className="text-red-700 mt-1">
+                        Je webhook secret mag NOOIT zichtbaar zijn in de browser. Gebruik altijd 
+                        server-side code (PHP, Node.js, Python) voor je implementatie.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">HMAC-SHA256 Signature</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Elke webhook request moet een signature header bevatten:
+                  </p>
+                  <div className="rounded-lg border bg-muted/50 p-3 font-mono text-xs">
+                    X-Webhook-Signature: sha256=HASH
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Rate limiting</h4>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Timer className="h-4 w-4" />
+                    Maximum 60 requests per minuut per IP adres
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Monitoring</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Alle webhook requests worden gelogd. Je kunt ze bekijken in het dashboard 
+                    voor troubleshooting.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="testing" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Webhook testen</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-medium">Test knop in CRM</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Gebruik de "Test Nu" knop op de webhook settings pagina om snel te testen 
+                    of alles werkt.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Test met cURL</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Test vanaf je terminal met dit commando:
+                  </p>
+                  <div className="rounded-lg border bg-muted/50 p-3 font-mono text-xs overflow-x-auto">
+                    {`curl -X POST "https://crm.staycoolairco.nl/api/webhook/leads?tenant=JOUW_TENANT_ID" \\
+  -H "Content-Type: application/json" \\
+  -H "X-Webhook-Signature: sha256=JOUW_SIGNATURE" \\
+  -d '{"name":"Test Lead","email":"test@example.com"}'`}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Response codes</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge className="bg-green-100 text-green-800">201</Badge>
+                      <span className="text-muted-foreground">Lead succesvol aangemaakt</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="destructive">400</Badge>
+                      <span className="text-muted-foreground">Validatie fout (missende velden)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="destructive">401</Badge>
+                      <span className="text-muted-foreground">Ongeldige signature</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="secondary">429</Badge>
+                      <span className="text-muted-foreground">Rate limit overschreden</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="examples" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>WordPress Contact Form 7</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border bg-muted/50 p-4 font-mono text-xs overflow-x-auto">
+                  {`// In functions.php
+add_action('wpcf7_mail_sent', 'send_to_staycool_crm');
+
+function send_to_staycool_crm($contact_form) {
+    $submission = WPCF7_Submission::get_instance();
+    if (!$submission) return;
+    
+    $posted_data = $submission->get_posted_data();
+    
+    $webhook_url = 'https://crm.staycoolairco.nl/api/webhook/leads?tenant=JOUW_TENANT_ID';
+    $webhook_secret = 'JOUW_WEBHOOK_SECRET';
+    
+    $payload = [
+        'name' => $posted_data['your-name'],
+        'email' => $posted_data['your-email'],
+        'phone' => $posted_data['your-phone'],
+        'company' => $posted_data['your-company'],
+        'message' => $posted_data['your-message'],
+        'source' => 'contact_form_7'
+    ];
+    
+    $json_payload = json_encode($payload);
+    $signature = 'sha256=' . hash_hmac('sha256', $json_payload, $webhook_secret);
+    
+    wp_remote_post($webhook_url, [
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'X-Webhook-Signature' => $signature
+        ],
+        'body' => $json_payload
+    ]);
+}`}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Meer voorbeelden</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Op de webhook settings pagina vind je complete voorbeelden voor:
+                </p>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Server className="h-4 w-4 text-muted-foreground" />
+                    <span>PHP implementatie</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Code className="h-4 w-4 text-muted-foreground" />
+                    <span>Node.js implementatie</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <span>cURL/Bash scripts</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="mt-4">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Ga naar webhook settings
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </>
+  )
+}
+
 function AnalyticsSection() {
   return (
     <>
@@ -1266,6 +1590,19 @@ function FAQSection() {
             <p className="text-sm text-muted-foreground">
               Bij het aanmaken van taken kun je een deadline instellen. Het systeem stuurt 
               automatisch herinneringen. Voor complexere flows gebruik je Workflow Automation.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Hoe krijg ik leads van mijn website in het CRM?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Gebruik onze webhook integratie! Ga naar Instellingen → Webhooks, kopieer je 
+              webhook URL en implementeer deze op je website met de voorbeeldcode. Elke keer 
+              als iemand je contactformulier invult, wordt automatisch een lead aangemaakt.
             </p>
           </CardContent>
         </Card>
