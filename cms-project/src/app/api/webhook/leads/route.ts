@@ -43,17 +43,14 @@ function transformToLead(payload: WebhookPayload, tenantId: string) {
 
   return {
     tenant_id: tenantId,
-    company_name: payload.company || companyFromEmail,
-    contact_name: payload.name,
+    name: payload.name,
     email: payload.email,
     phone: payload.phone || null,
-    website: payload.website || (emailDomain ? `https://${emailDomain}` : null),
+    company: payload.company || companyFromEmail,
     source: payload.source || 'WEBHOOK',
-    status: 'NEW',
-    priority: 'MEDIUM',
-    description: payload.message || 'Lead from webhook',
-    notes: `Auto-imported from webhook\n\nSource: ${payload.source || 'unknown'}\nReceived: ${new Date().toISOString()}`,
-    metadata: payload.metadata || {},
+    status: 'new',
+    notes: `Auto-imported from webhook\n\nMessage: ${payload.message || 'No message'}\nSource: ${payload.source || 'unknown'}\nReceived: ${new Date().toISOString()}`,
+    tags: payload.source ? [payload.source] : ['webhook'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -307,8 +304,8 @@ export async function POST(request: NextRequest) {
       message: 'Lead created successfully',
       leadId: newLead.id,
       data: {
-        company: newLead.company_name,
-        contact: newLead.contact_name,
+        name: newLead.name,
+        company: newLead.company,
         email: newLead.email,
         source: newLead.source,
         status: newLead.status
