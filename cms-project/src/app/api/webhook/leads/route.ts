@@ -27,10 +27,10 @@ interface WebhookPayload {
   [key: string]: any
 }
 
-// Create Supabase client
+// Create Supabase client with fallback to anon key
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
 // Transform webhook data to lead format
