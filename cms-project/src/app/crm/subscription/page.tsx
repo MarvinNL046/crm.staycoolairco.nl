@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { SettingsClient } from "@/components/settings/SettingsClient";
+import { SubscriptionClient } from "@/components/subscription/SubscriptionClient";
 
-export default async function SettingsPage() {
+export default async function SubscriptionPage() {
   const supabase = await createClient();
 
   const {
@@ -62,10 +62,19 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <SettingsClient 
-      tenant={tenant}
-      currentUsers={currentUsers || 0}
-      currentLeads={currentLeads || 0}
-    />
+    <div className="container mx-auto p-6 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Subscription</h1>
+        <p className="text-muted-foreground">
+          Beheer je abonnement en bekijk je gebruik
+        </p>
+      </div>
+
+      <SubscriptionClient 
+        tenant={tenant}
+        currentUsers={currentUsers || 0}
+        currentLeads={currentLeads || 0}
+      />
+    </div>
   );
 }
