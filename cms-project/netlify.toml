@@ -5,15 +5,7 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
-  force = false
-
 [build.environment]
-  NEXT_PUBLIC_SUPABASE_URL = "https://tvxqvgqjlnkmimqtxvuu.supabase.co"
   NODE_VERSION = "18"
 
 [[headers]]
