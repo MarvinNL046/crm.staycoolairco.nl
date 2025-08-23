@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   Copy,
   Eye,
@@ -40,7 +50,13 @@ import {
   Crown,
   Zap,
   Building,
-  AlertTriangle
+  AlertTriangle,
+  Mail,
+  Plus,
+  Edit,
+  Trash2,
+  Save,
+  X
 } from "lucide-react";
 
 interface Tenant {
@@ -53,6 +69,20 @@ interface Tenant {
   max_leads: number;
   subscription_started_at: string;
   subscription_ends_at: string;
+  updated_at: string;
+}
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  template_type: string;
+  html_content: string;
+  text_content?: string;
+  variables?: Record<string, string>;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string;
   updated_at: string;
 }
 
@@ -109,11 +139,34 @@ const statusIcons = {
   suspended: AlertTriangle
 };
 
+const emailTemplateTypes = {
+  lead_welcome: { name: 'Welkom Nieuwe Lead', description: 'Automatisch verzonden naar nieuwe leads' },
+  appointment_confirmation: { name: 'Afspraak Bevestiging', description: 'Bevestiging van gemaakte afspraken' },
+  invoice_sent: { name: 'Factuur Verzonden', description: 'Notificatie bij verzonden facturen' },
+  quote_sent: { name: 'Offerte Verzonden', description: 'Notificatie bij verzonden offertes' },
+  follow_up: { name: 'Follow-up Email', description: 'Follow-up communicatie met klanten' }
+};
+
 export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsClientProps) {
   const [webhookSecret, setWebhookSecret] = useState('wh_secret_abc123xyz789');
   const [showSecret, setShowSecret] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Email Templates State
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    subject: '',
+    template_type: '',
+    html_content: '',
+    text_content: '',
+    is_default: false,
+    is_active: true
+  });
 
   const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://crm.staycoolairco.nl'}/api/webhook/leads`;
 
@@ -122,6 +175,97 @@ export function SettingsClient({ tenant, currentUsers, currentLeads }: SettingsC
   
   const userUsagePercentage = (currentUsers / tenant.max_users) * 100;
   const leadUsagePercentage = (currentLeads / tenant.max_leads) * 100;
+
+  // Load email templates
+  useEffect(() => {
+    async function loadEmailTemplates() {
+      try {
+        const response = await fetch('/api/email-templates');
+        if (response.ok) {
+          const data = await response.json();
+          setEmailTemplates(data.templates);
+        }
+      } catch (error) {
+        console.error('Error loading email templates:', error);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    }
+
+    loadEmailTemplates();
+  }, []);
+
+  // Email template handlers
+  const openCreateTemplateDialog = () => {
+    setTemplateForm({
+      name: '',
+      subject: '',
+      template_type: '',
+      html_content: '',
+      text_content: '',
+      is_default: false,
+      is_active: true
+    });
+    setEditingTemplate(null);
+    setIsTemplateDialogOpen(true);
+  };
+
+  const openEditTemplateDialog = (template: EmailTemplate) => {
+    setTemplateForm({
+      name: template.name,
+      subject: template.subject,
+      template_type: template.template_type,
+      html_content: template.html_content,
+      text_content: template.text_content || '',
+      is_default: template.is_default,
+      is_active: template.is_active
+    });
+    setEditingTemplate(template);
+    setIsTemplateDialogOpen(true);
+  };
+
+  const saveEmailTemplate = async () => {
+    try {
+      const url = editingTemplate ? `/api/email-templates/${editingTemplate.id}` : '/api/email-templates';
+      const method = editingTemplate ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(templateForm)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (editingTemplate) {
+          setEmailTemplates(prev => prev.map(t => t.id === editingTemplate.id ? data.template : t));
+        } else {
+          setEmailTemplates(prev => [...prev, data.template]);
+        }
+        setIsTemplateDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+    }
+  };
+
+  const deleteEmailTemplate = async (template: EmailTemplate) => {
+    if (confirm('Weet je zeker dat je deze template wilt verwijderen?')) {
+      try {
+        const response = await fetch(`/api/email-templates/${template.id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setEmailTemplates(prev => prev.filter(t => t.id !== template.id));
+        }
+      } catch (error) {
+        console.error('Error deleting template:', error);
+      }
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('nl-NL', {
@@ -239,6 +383,10 @@ curl -X POST ${webhookUrl} \\
           <TabsTrigger value="subscription" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             Abonnement
+          </TabsTrigger>
+          <TabsTrigger value="email-templates" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Email Templates
           </TabsTrigger>
           <TabsTrigger value="webhooks" className="flex items-center gap-2">
             <Webhook className="h-4 w-4" />
@@ -400,6 +548,228 @@ curl -X POST ${webhookUrl} \\
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Email Templates Tab */}
+        <TabsContent value="email-templates" className="space-y-6">
+          {/* Header with Add Button */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Email Templates</h3>
+              <p className="text-sm text-muted-foreground">
+                Beheer je email templates voor automatische communicatie
+              </p>
+            </div>
+            <Button onClick={openCreateTemplateDialog} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nieuwe Template
+            </Button>
+          </div>
+
+          {/* Templates List */}
+          <div className="grid gap-4">
+            {templatesLoading ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">Laden...</div>
+                </CardContent>
+              </Card>
+            ) : emailTemplates.length === 0 ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Geen templates gevonden</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Maak je eerste email template om te beginnen met geautomatiseerde communicatie.
+                    </p>
+                    <Button onClick={openCreateTemplateDialog}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Eerste Template Maken
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              emailTemplates.map((template) => (
+                <Card key={template.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {template.name}
+                          {template.is_default && (
+                            <Badge variant="secondary">Standaard</Badge>
+                          )}
+                          {!template.is_active && (
+                            <Badge variant="outline">Inactief</Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          {emailTemplateTypes[template.template_type as keyof typeof emailTemplateTypes]?.name || template.template_type}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditTemplateDialog(template)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {!template.is_default && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteEmailTemplate(template)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-sm font-medium">Onderwerp:</Label>
+                        <p className="text-sm text-muted-foreground">{template.subject}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Type:</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {emailTemplateTypes[template.template_type as keyof typeof emailTemplateTypes]?.description || template.template_type}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Template Edit/Create Dialog */}
+          <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingTemplate ? 'Template Bewerken' : 'Nieuwe Template Maken'}
+                </DialogTitle>
+                <DialogDescription>
+                  Configureer je email template voor automatische communicatie
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="template-name">Template Naam *</Label>
+                    <Input
+                      id="template-name"
+                      value={templateForm.name}
+                      onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Bijv. Welkom Nieuwe Lead"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="template-type">Template Type *</Label>
+                    <Select
+                      value={templateForm.template_type}
+                      onValueChange={(value) => setTemplateForm(prev => ({ ...prev, template_type: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(emailTemplateTypes).map(([key, type]) => (
+                          <SelectItem key={key} value={key}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="template-subject">Email Onderwerp *</Label>
+                  <Input
+                    id="template-subject"
+                    value={templateForm.subject}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="Bijv. Welkom bij {{company_name}}"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="template-html">HTML Inhoud *</Label>
+                  <Textarea
+                    id="template-html"
+                    value={templateForm.html_content}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, html_content: e.target.value }))}
+                    rows={10}
+                    className="font-mono text-sm"
+                    placeholder="<html><body><h1>Welkom {{customer_name}}!</h1>...</body></html>"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="template-text">Tekst Versie (optioneel)</Label>
+                  <Textarea
+                    id="template-text"
+                    value={templateForm.text_content}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, text_content: e.target.value }))}
+                    rows={6}
+                    placeholder="Tekst versie van je email..."
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is-default"
+                      checked={templateForm.is_default}
+                      onCheckedChange={(checked) => setTemplateForm(prev => ({ ...prev, is_default: checked }))}
+                    />
+                    <Label htmlFor="is-default">Maak dit de standaard template voor dit type</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is-active"
+                      checked={templateForm.is_active}
+                      onCheckedChange={(checked) => setTemplateForm(prev => ({ ...prev, is_active: checked }))}
+                    />
+                    <Label htmlFor="is-active">Actief</Label>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Beschikbare Variabelen:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                    <code>{'{{customer_name}}'}</code>
+                    <code>{'{{company_name}}'}</code>
+                    <code>{'{{contact_person}}'}</code>
+                    <code>{'{{lead_name}}'}</code>
+                    <code>{'{{appointment_date}}'}</code>
+                    <code>{'{{invoice_number}}'}</code>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Deze variabelen worden automatisch vervangen door echte waarden.
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsTemplateDialogOpen(false)}>
+                  Annuleren
+                </Button>
+                <Button onClick={saveEmailTemplate}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingTemplate ? 'Opslaan' : 'Maken'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Webhooks Tab */}
